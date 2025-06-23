@@ -89,6 +89,10 @@
     <artifactId>thymeleaf-extras-springsecurity6</artifactId>
     <version>3.1.1.RELEASE</version> <!-- O la versión compatible -->
 </dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-websocket</artifactId>
+</dependency>
 
 
 

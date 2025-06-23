@@ -47,7 +47,7 @@
 <body>
     <header th:replace="~{fragments/navbar :: navbar}"></header>
 
-    <main class="container py-4 py-md-5">
+    <main class="container py-4 py-md-5" th:attr="data-usuario-id=${usuarioId}">
         <div class="row">
             <div class="col-lg-8 mx-auto">
                 <!-- Header -->
@@ -108,6 +108,16 @@
                                         <span th:if="${notificacion.leido}" class="badge bg-secondary">
                                             <i class="bi bi-check me-1"></i>Leído
                                         </span>
+                                        
+                                        <!-- Badge especial para rechazo -->
+                                        <span th:if="${notificacion.tipo == 'SOLICITUD_RECHAZADA'}" class="badge bg-danger ms-2">
+                                            <i class="bi bi-x-circle me-1"></i>Rechazada
+                                        </span>
+                                        
+                                        <!-- Badge especial para aceptada -->
+                                        <span th:if="${notificacion.tipo == 'SOLICITUD_ACEPTADA'}" class="badge bg-success ms-2">
+                                            <i class="bi bi-check-circle me-1"></i>Aceptada
+                                        </span>
                                     </div>
 
                                     <!-- Acciones para solicitudes de unión -->
@@ -152,8 +162,23 @@
                                         </div>
                                     </div>
 
-                                    <!-- Botón para marcar como leída -->
-                                    <div th:if="${!notificacion.leido}" class="mt-2">
+                                    <!-- Acciones para notificaciones de rechazo -->
+                                    <div th:if="${notificacion.tipo == 'SOLICITUD_RECHAZADA' and !notificacion.leido}" class="mt-3">
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <button type="button" class="btn btn-outline-primary btn-sm volver-intentar-btn"
+                                                    th:data-grupo-nombre="${notificacion.contenido}"
+                                                    th:data-notification-id="${notificacion.idNotificacion}">
+                                                <i class="bi bi-arrow-clockwise me-1"></i>Volver a intentar
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm marcar-leida"
+                                                    th:data-notification-id="${notificacion.idNotificacion}">
+                                                <i class="bi bi-x me-1"></i>Cerrar
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Botón para marcar como leída (otras notificaciones) -->
+                                    <div th:if="${!notificacion.leido and notificacion.tipo != 'SOLICITUD_RECHAZADA' and notificacion.tipo != 'SOLICITUD_UNION'}" class="mt-2">
                                         <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none marcar-leida"
                                                 th:data-notification-id="${notificacion.idNotificacion}">
                                             <i class="bi bi-check me-1"></i>Marcar como leída
@@ -198,8 +223,16 @@
     </div>
 
     <footer th:replace="~{fragments/footer :: footer}"></footer>
+    
+    <!-- WebSocket libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Configurar WebSocket para notificaciones en tiempo real
+            setupWebSocketNotifications();
+            
             // Marcar notificación individual como leída
             document.querySelectorAll('.marcar-leida').forEach(button => {
                 button.addEventListener('click', function() {
@@ -238,6 +271,107 @@
                     alert('Error al marcar las notificaciones como leídas');
                 });
             });
+
+            // Volver a intentar unirse al grupo
+            document.querySelectorAll('.volver-intentar-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const grupoNombre = this.dataset.grupoNombre;
+                    const notificationId = this.dataset.notificationId;
+                    
+                    if (confirm('¿Estás seguro de que quieres volver a solicitar unirte a este grupo?')) {
+                        // Extraer el nombre del grupo del contenido de la notificación
+                        const regex = /grupo\s+"([^"]+)"/;
+                        const match = grupoNombre.match(regex);
+                        const nombreGrupo = match ? match[1] : '';
+                        
+                        if (nombreGrupo) {
+                            // Redirigir a la página de búsqueda de grupos
+                            alert('Te redirigiremos a la página de grupos para que puedas encontrar "' + nombreGrupo + '" y volver a solicitar unirte.');
+                            window.location.href = '/grupos';
+                        } else {
+                            alert('No se pudo determinar el grupo. Por favor, ve a la página de grupos y busca el grupo manualmente.');
+                            window.location.href = '/grupos';
+                        }
+                        
+                        // Marcar la notificación como leída
+                        fetch(`/notificaciones/${notificationId}/marcar-leida`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        });
+                    }
+                });
+            });
+            
+            // Configurar WebSocket para notificaciones en tiempo real
+            function setupWebSocketNotifications() {
+                // Obtener el ID del usuario desde el modelo Thymeleaf
+                const usuarioIdElement = document.querySelector('[data-usuario-id]');
+                if (!usuarioIdElement) return;
+                
+                const usuarioId = usuarioIdElement.getAttribute('data-usuario-id');
+                if (!usuarioId || usuarioId === '') return;
+                
+                const socket = new SockJS('/ws');
+                const stompClient = Stomp.over(socket);
+                
+                stompClient.connect({}, function (frame) {
+                    console.log('Connected to notifications WebSocket: ' + frame);
+                    
+                    // Suscribirse al canal de notificaciones del usuario
+                    stompClient.subscribe('/queue/notificaciones/' + usuarioId, function (message) {
+                        const nuevaNotificacion = JSON.parse(message.body);
+                        
+                        // Mostrar notificación visual
+                        mostrarNotificacionTemporal(nuevaNotificacion);
+                        
+                        // Actualizar la página de notificaciones si está activa
+                        if (window.location.pathname === '/notificaciones') {
+                            setTimeout(() => {
+                                location.reload();
+                            }, 2000); // Esperar 2 segundos para que el usuario vea la notificación
+                        }
+                    });
+                }, function (error) {
+                    console.log('WebSocket notifications connection error: ' + error);
+                });
+            }
+            
+            // Mostrar notificación temporal en la parte superior
+            function mostrarNotificacionTemporal(notificacion) {
+                const notificationDiv = document.createElement('div');
+                notificationDiv.className = 'alert alert-info alert-dismissible fade show position-fixed';
+                notificationDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+                
+                let iconClass = 'bi-bell';
+                let bgClass = 'alert-info';
+                
+                if (notificacion.tipo === 'SOLICITUD_ACEPTADA') {
+                    iconClass = 'bi-check-circle';
+                    bgClass = 'alert-success';
+                } else if (notificacion.tipo === 'SOLICITUD_RECHAZADA') {
+                    iconClass = 'bi-x-circle';
+                    bgClass = 'alert-warning';
+                }
+                
+                notificationDiv.className = `alert ${bgClass} alert-dismissible fade show position-fixed`;
+                notificationDiv.innerHTML = `
+                    <i class="bi ${iconClass} me-2"></i>
+                    <strong>Nueva notificación:</strong>
+                    <br>${notificacion.contenido}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                document.body.appendChild(notificationDiv);
+                
+                // Auto-remover después de 5 segundos
+                setTimeout(() => {
+                    if (notificationDiv.parentNode) {
+                        notificationDiv.remove();
+                    }
+                }, 5000);
+            }
         });
     </script>
 </body>

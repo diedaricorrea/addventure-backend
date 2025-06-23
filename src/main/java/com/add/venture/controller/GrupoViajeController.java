@@ -1,7 +1,9 @@
 package com.add.venture.controller;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -87,9 +89,20 @@ public class GrupoViajeController {
         usuarioAutenticadoHelper.cargarDatosUsuarioParaNavbar(model);
         usuarioAutenticadoHelper.cargarUsuarioParaPerfil(model);
 
-        // Cargar todos los grupos (en una implementación real, aplicaríamos los filtros
-        // pero ta dificil :v)
-        model.addAttribute("grupos", grupoViajeRepository.findAll());
+        // Cargar todos los grupos 
+        List<GrupoViaje> todosLosGrupos = grupoViajeRepository.findAll();
+        
+        // Procesar cada grupo para incluir solo participantes aceptados en el conteo y visualización
+        for (GrupoViaje grupo : todosLosGrupos) {
+            // Filtrar solo participantes aceptados
+            List<ParticipanteGrupo> participantesAceptados = participanteGrupoRepository
+                    .findByGrupoAndEstadoSolicitud(grupo, EstadoSolicitud.ACEPTADO);
+            
+            // Convertir lista a set y reemplazar la lista de participantes con solo los aceptados
+            grupo.setParticipantes(new java.util.HashSet<>(participantesAceptados));
+        }
+        
+        model.addAttribute("grupos", todosLosGrupos);
 
         // Cargar tipos de viaje para los filtros
         model.addAttribute("tiposViaje", grupoViajeService.obtenerTiposViaje());
@@ -133,59 +146,123 @@ public class GrupoViajeController {
             model.addAttribute("estadoSolicitud", "NINGUNA");
         }
         
-        // Contar solo participantes aceptados
+        // Contar solo participantes aceptados (sin incluir al creador ya que se cuenta aparte)
         long participantesAceptados = participanteGrupoRepository.countByGrupoAndEstadoSolicitud(grupo, EstadoSolicitud.ACEPTADO);
         model.addAttribute("participantesAceptados", participantesAceptados);
+        
+        // Total de miembros = participantes aceptados + creador
+        model.addAttribute("totalMiembros", participantesAceptados + 1);
+        
+        // Cargar solo participantes con estado ACEPTADO
+        List<ParticipanteGrupo> participantesAceptadosList = participanteGrupoRepository
+                .findByGrupoAndEstadoSolicitud(grupo, EstadoSolicitud.ACEPTADO);
+        model.addAttribute("participantesAceptadosList", participantesAceptadosList);
 
         return "grupos/detalles";
     }
 
     @PostMapping("/{id}/unirse")
     @ResponseBody
-    public String unirseAlGrupo(@PathVariable("id") Long idGrupo) {
-        // Obtener el usuario autenticado
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
-            return "{\"error\": \"Usuario no autenticado\"}";
-        }
-
-        String email = auth.getName();
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        // Obtener el grupo
-        GrupoViaje grupo = grupoViajeRepository.findById(idGrupo)
-                .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
-
-        // Verificar si ya es participante o tiene una solicitud pendiente
-        Optional<ParticipanteGrupo> participanteExistente = participanteGrupoRepository.findByUsuarioAndGrupo(usuario, grupo);
-        if (participanteExistente.isPresent()) {
-            EstadoSolicitud estado = participanteExistente.get().getEstadoSolicitud();
-            if (estado == EstadoSolicitud.ACEPTADO) {
-                return "{\"error\": \"Ya eres participante de este grupo\"}";
-            } else if (estado == EstadoSolicitud.PENDIENTE) {
-                return "{\"error\": \"Ya tienes una solicitud pendiente para este grupo\"}";
-            } else if (estado == EstadoSolicitud.RECHAZADO) {
-                return "{\"error\": \"Tu solicitud fue rechazada anteriormente\"}";
+    public ResponseEntity<Map<String, Object>> unirseAlGrupo(@PathVariable("id") Long idGrupo) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Obtener el usuario autenticado
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
+                response.put("success", false);
+                response.put("error", "Usuario no autenticado");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
+
+            String email = auth.getName();
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            // Obtener el grupo
+            GrupoViaje grupo = grupoViajeRepository.findById(idGrupo)
+                    .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
+
+            // Verificar que no sea el creador
+            if (grupo.getCreador().equals(usuario)) {
+                response.put("success", false);
+                response.put("error", "El creador no puede unirse como participante");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Verificar capacidad del grupo
+            List<ParticipanteGrupo> participantesAceptados = participanteGrupoRepository.findByGrupoAndEstadoSolicitud(grupo, EstadoSolicitud.ACEPTADO);
+            if (participantesAceptados.size() >= grupo.getMaxParticipantes() - 1) {
+                response.put("success", false);
+                response.put("error", "El grupo ha alcanzado su capacidad máxima");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Verificar si ya tiene solicitud
+            Optional<ParticipanteGrupo> participanteExistente = participanteGrupoRepository.findByUsuarioAndGrupo(usuario, grupo);
+            if (participanteExistente.isPresent()) {
+                ParticipanteGrupo participante = participanteExistente.get();
+                
+                if (participante.getEstadoSolicitud() == EstadoSolicitud.ACEPTADO) {
+                    response.put("success", false);
+                    response.put("error", "Ya eres miembro de este grupo");
+                    return ResponseEntity.badRequest().body(response);
+                }
+                
+                if (participante.getEstadoSolicitud() == EstadoSolicitud.PENDIENTE) {
+                    response.put("success", false);
+                    response.put("error", "Ya tienes una solicitud pendiente para este grupo");
+                    return ResponseEntity.badRequest().body(response);
+                }
+                
+                if (participante.getEstadoSolicitud() == EstadoSolicitud.RECHAZADO) {
+                    int intentos = participante.getIntentosSolicitud();
+                    if (intentos >= 3) {
+                        response.put("success", false);
+                        response.put("error", "Has alcanzado el límite máximo de intentos para este grupo (3/3)");
+                        return ResponseEntity.badRequest().body(response);
+                    }
+                    
+                    // Permitir reenvío de solicitud
+                    participante.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+                    participante.setFechaUnion(LocalDateTime.now());
+                    participante.setIntentosSolicitud(intentos + 1);
+                    participanteGrupoRepository.save(participante);
+                    
+                    // Crear notificación para el líder del grupo
+                    notificacionService.crearNotificacionSolicitudUnion(usuario, grupo.getCreador(), 
+                            grupo.getIdGrupo(), grupo.getNombreViaje());
+                    
+                    response.put("success", true);
+                    response.put("message", "Nueva solicitud enviada al líder del grupo (Intento " + (intentos + 1) + " de 3)");
+                    return ResponseEntity.ok(response);
+                }
+            }
+
+            // Crear solicitud de participante
+            ParticipanteGrupo solicitud = ParticipanteGrupo.builder()
+                    .usuario(usuario)
+                    .grupo(grupo)
+                    .rolParticipante("MIEMBRO")
+                    .estadoSolicitud(EstadoSolicitud.PENDIENTE)
+                    .fechaUnion(LocalDateTime.now())
+                    .build();
+
+            participanteGrupoRepository.save(solicitud);
+
+            // Crear notificación para el líder del grupo
+            notificacionService.crearNotificacionSolicitudUnion(usuario, grupo.getCreador(), 
+                    idGrupo, grupo.getNombreViaje());
+
+            response.put("success", true);
+            response.put("message", "Solicitud enviada al líder del grupo");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", "Error interno del servidor: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
-
-        // Crear solicitud de participante
-        ParticipanteGrupo solicitud = ParticipanteGrupo.builder()
-                .usuario(usuario)
-                .grupo(grupo)
-                .rolParticipante("MIEMBRO")
-                .estadoSolicitud(EstadoSolicitud.PENDIENTE)
-                .fechaUnion(LocalDateTime.now())
-                .build();
-
-        participanteGrupoRepository.save(solicitud);
-
-        // Crear notificación para el líder del grupo
-        notificacionService.crearNotificacionSolicitudUnion(usuario, grupo.getCreador(), 
-                idGrupo, grupo.getNombreViaje());
-
-        return "{\"success\": true, \"message\": \"Solicitud enviada al líder del grupo\"}";
     }
 
     @PostMapping("/{id}/abandonar")

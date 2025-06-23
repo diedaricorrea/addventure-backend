@@ -68,6 +68,7 @@ public class NotificacionController {
                     Usuario usuario = usuarioOpt.get();
                     List<Notificacion> notificaciones = notificacionService.obtenerNotificacionesUsuario(usuario);
                     model.addAttribute("notificaciones", notificaciones);
+                    model.addAttribute("usuarioId", usuario.getIdUsuario());
                 } else {
                     // Usuario no encontrado, agregar lista vacía
                     model.addAttribute("notificaciones", new ArrayList<>());
@@ -192,6 +193,14 @@ public class NotificacionController {
                     solicitud.setFechaUnion(LocalDateTime.now());
                 }
                 participanteGrupoRepository.save(solicitud);
+                
+                // Enviar notificación de aceptación al solicitante
+                try {
+                    notificacionService.crearNotificacionSolicitudAceptada(solicitante, grupo.getNombreViaje());
+                } catch (Exception e) {
+                    System.err.println("Error al crear notificación de aceptación: " + e.getMessage());
+                }
+                
                 redirectAttributes.addFlashAttribute("mensaje", "Solicitud aceptada exitosamente");
                 
             } else if ("rechazar".equals(accion)) {
@@ -209,6 +218,16 @@ public class NotificacionController {
                             .build();
                     participanteGrupoRepository.save(solicitud);
                 }
+                
+                // Enviar notificación de rechazo al solicitante con información de intentos
+                try {
+                    int intentosActuales = solicitud != null && solicitud.getIntentosSolicitud() != null ? 
+                                          solicitud.getIntentosSolicitud() : 1;
+                    notificacionService.crearNotificacionSolicitudRechazada(solicitante, grupo.getNombreViaje(), intentosActuales, 3);
+                } catch (Exception e) {
+                    System.err.println("Error al crear notificación de rechazo: " + e.getMessage());
+                }
+                
                 redirectAttributes.addFlashAttribute("mensaje", "Solicitud rechazada");
             } else {
                 redirectAttributes.addFlashAttribute("error", "Acción no válida");

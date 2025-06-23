@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.add.venture.model.GrupoViaje;
@@ -20,6 +21,9 @@ public class NotificacionServiceImpl implements INotificacionService {
     
     @Autowired
     private GrupoViajeRepository grupoViajeRepository;
+    
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @Override
     public Notificacion crearNotificacionSolicitudUnion(Usuario solicitante, Usuario lider, Long idGrupo, String nombreGrupo) {
@@ -38,7 +42,87 @@ public class NotificacionServiceImpl implements INotificacionService {
                 .estado("activo")
                 .build();
         
-        return notificacionRepository.save(notificacion);
+        Notificacion nuevaNotificacion = notificacionRepository.save(notificacion);
+        
+        // Enviar notificación por WebSocket al líder del grupo
+        messagingTemplate.convertAndSend("/queue/notificaciones/" + lider.getIdUsuario(), nuevaNotificacion);
+        
+        return nuevaNotificacion;
+    }
+
+    @Override
+    public Notificacion crearNotificacionSolicitudRechazada(Usuario solicitante, String nombreGrupo) {
+        Notificacion notificacion = Notificacion.builder()
+                .tipo("SOLICITUD_RECHAZADA")
+                .contenido("Tu solicitud para unirte al grupo \"" + nombreGrupo + "\" ha sido rechazada. " +
+                          "Puedes volver a intentar (máximo 3 intentos por grupo).")
+                .usuario(solicitante)
+                .grupo(null) // No necesitamos la referencia al grupo para esta notificación
+                .solicitante(null)
+                .leido(false)
+                .fecha(LocalDateTime.now())
+                .estado("activo")
+                .build();
+        
+        Notificacion nuevaNotificacion = notificacionRepository.save(notificacion);
+        
+        // Enviar notificación por WebSocket al solicitante
+        messagingTemplate.convertAndSend("/queue/notificaciones/" + solicitante.getIdUsuario(), nuevaNotificacion);
+        
+        return nuevaNotificacion;
+    }
+
+    @Override
+    public Notificacion crearNotificacionSolicitudRechazada(Usuario solicitante, String nombreGrupo, int intentosUsados, int intentosMaximos) {
+        String mensaje;
+        if (intentosUsados >= intentosMaximos) {
+            mensaje = "Tu solicitud para unirte al grupo \"" + nombreGrupo + "\" ha sido rechazada. " +
+                     "Has alcanzado el límite máximo de " + intentosMaximos + " intentos.";
+        } else {
+            int intentosRestantes = intentosMaximos - intentosUsados;
+            mensaje = "Tu solicitud para unirte al grupo \"" + nombreGrupo + "\" ha sido rechazada. " +
+                     "Te quedan " + intentosRestantes + " intento" + (intentosRestantes == 1 ? "" : "s") + " más.";
+        }
+        
+        Notificacion notificacion = Notificacion.builder()
+                .tipo("SOLICITUD_RECHAZADA")
+                .contenido(mensaje)
+                .usuario(solicitante)
+                .grupo(null)
+                .solicitante(null)
+                .leido(false)
+                .fecha(LocalDateTime.now())
+                .estado("activo")
+                .build();
+        
+        Notificacion nuevaNotificacion = notificacionRepository.save(notificacion);
+        
+        // Enviar notificación por WebSocket al solicitante
+        messagingTemplate.convertAndSend("/queue/notificaciones/" + solicitante.getIdUsuario(), nuevaNotificacion);
+        
+        return nuevaNotificacion;
+    }
+
+    @Override
+    public Notificacion crearNotificacionSolicitudAceptada(Usuario solicitante, String nombreGrupo) {
+        Notificacion notificacion = Notificacion.builder()
+                .tipo("SOLICITUD_ACEPTADA")
+                .contenido("¡Felicidades! Tu solicitud para unirte al grupo \"" + nombreGrupo + "\" ha sido aceptada. " +
+                          "Ya eres oficialmente parte del grupo.")
+                .usuario(solicitante)
+                .grupo(null) // No necesitamos la referencia al grupo para esta notificación
+                .solicitante(null)
+                .leido(false)
+                .fecha(LocalDateTime.now())
+                .estado("activo")
+                .build();
+        
+        Notificacion nuevaNotificacion = notificacionRepository.save(notificacion);
+        
+        // Enviar notificación por WebSocket al solicitante
+        messagingTemplate.convertAndSend("/queue/notificaciones/" + solicitante.getIdUsuario(), nuevaNotificacion);
+        
+        return nuevaNotificacion;
     }
 
     @Override

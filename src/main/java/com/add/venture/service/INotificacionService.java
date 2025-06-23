@@ -19,6 +19,35 @@ public interface INotificacionService {
     Notificacion crearNotificacionSolicitudUnion(Usuario solicitante, Usuario lider, Long idGrupo, String nombreGrupo);
     
     /**
+     * Crea una notificación cuando una solicitud es rechazada
+     * 
+     * @param solicitante usuario cuya solicitud fue rechazada
+     * @param nombreGrupo nombre del grupo
+     * @return la notificación creada
+     */
+    Notificacion crearNotificacionSolicitudRechazada(Usuario solicitante, String nombreGrupo);
+    
+    /**
+     * Crea una notificación cuando una solicitud es rechazada con información de intentos
+     * 
+     * @param solicitante usuario cuya solicitud fue rechazada
+     * @param nombreGrupo nombre del grupo
+     * @param intentosUsados intentos ya utilizados
+     * @param intentosMaximos máximo de intentos permitidos
+     * @return la notificación creada
+     */
+    Notificacion crearNotificacionSolicitudRechazada(Usuario solicitante, String nombreGrupo, int intentosUsados, int intentosMaximos);
+    
+    /**
+     * Crea una notificación cuando una solicitud es aceptada
+     * 
+     * @param solicitante usuario cuya solicitud fue aceptada
+     * @param nombreGrupo nombre del grupo
+     * @return la notificación creada
+     */
+    Notificacion crearNotificacionSolicitudAceptada(Usuario solicitante, String nombreGrupo);
+    
+    /**
      * Obtiene todas las notificaciones de un usuario
      * 
      * @param usuario el usuario

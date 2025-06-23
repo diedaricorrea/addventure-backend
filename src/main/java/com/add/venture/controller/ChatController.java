@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -47,6 +48,9 @@ public class ChatController {
 
     @Autowired
     private MensajeGrupoRepository mensajeGrupoRepository;
+    
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     private final String UPLOAD_DIR = "uploads/chat/";
 
@@ -117,6 +121,10 @@ public class ChatController {
                     .build();
 
             mensajeGrupoRepository.save(nuevoMensaje);
+            
+            // Enviar mensaje por WebSocket a todos los participantes del grupo
+            messagingTemplate.convertAndSend("/topic/grupo/" + idGrupo, nuevoMensaje);
+            
             return ResponseEntity.ok(nuevoMensaje);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al enviar mensaje: " + e.getMessage());
@@ -186,6 +194,10 @@ public class ChatController {
                     .build();
 
             mensajeGrupoRepository.save(nuevoMensaje);
+            
+            // Enviar mensaje por WebSocket a todos los participantes del grupo
+            messagingTemplate.convertAndSend("/topic/grupo/" + idGrupo, nuevoMensaje);
+            
             return ResponseEntity.ok(nuevoMensaje);
         } catch (IOException e) {
             return ResponseEntity.badRequest().body("Error al guardar la imagen: " + e.getMessage());

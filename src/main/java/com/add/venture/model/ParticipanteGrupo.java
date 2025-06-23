@@ -48,6 +48,10 @@ public class ParticipanteGrupo {
 
     @Column(name = "fecha_union")
     private LocalDateTime fechaUnion;
+    
+    @Column(name = "intentos_solicitud")
+    @Builder.Default
+    private Integer intentosSolicitud = 1;
 
     public enum EstadoSolicitud {
         PENDIENTE, ACEPTADO, RECHAZADO
