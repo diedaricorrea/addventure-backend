@@ -283,4 +283,69 @@ public class ChatController {
             return ResponseEntity.badRequest().body("Error al cerrar chat: " + e.getMessage());
         }
     }
+
+    @PostMapping("/grupo/{idGrupo}/eliminar-mensaje/{idMensaje}")
+    @ResponseBody
+    public ResponseEntity<?> eliminarMensaje(
+            @PathVariable("idGrupo") Long idGrupo,
+            @PathVariable("idMensaje") Long idMensaje) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
+                return ResponseEntity.badRequest().body("Usuario no autenticado");
+            }
+
+            String email = auth.getName();
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            GrupoViaje grupo = grupoViajeRepository.findById(idGrupo)
+                    .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
+
+            // Verificar que el usuario es participante aceptado del grupo
+            Optional<ParticipanteGrupo> participante = participanteGrupoRepository.findByUsuarioAndGrupo(usuario, grupo);
+            if (participante.isEmpty() || participante.get().getEstadoSolicitud() != EstadoSolicitud.ACEPTADO) {
+                return ResponseEntity.badRequest().body("No tienes acceso al chat de este grupo");
+            }
+
+            // Buscar el mensaje
+            Optional<MensajeGrupo> mensajeOpt = mensajeGrupoRepository.findById(idMensaje);
+            if (mensajeOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body("Mensaje no encontrado");
+            }
+
+            MensajeGrupo mensaje = mensajeOpt.get();
+
+            // Verificar que el mensaje pertenece al grupo correcto
+            if (!mensaje.getGrupo().getIdGrupo().equals(idGrupo)) {
+                return ResponseEntity.badRequest().body("El mensaje no pertenece a este grupo");
+            }
+
+            // Verificar que el usuario es el remitente del mensaje o el creador del grupo
+            if (!mensaje.getRemitente().equals(usuario) && !grupo.getCreador().equals(usuario)) {
+                return ResponseEntity.badRequest().body("Solo puedes eliminar tus propios mensajes o ser el creador del grupo");
+            }
+
+            // Eliminar archivo si es una imagen
+            if ("imagen".equals(mensaje.getTipoMensaje()) && mensaje.getArchivoUrl() != null) {
+                try {
+                    Path projectRoot = Paths.get("").toAbsolutePath();
+                    Path filePath = projectRoot.resolve(mensaje.getArchivoUrl().substring(1)); // Quitar el "/" inicial
+                    Files.deleteIfExists(filePath);
+                } catch (Exception e) {
+                    System.out.println("Error al eliminar archivo: " + e.getMessage());
+                }
+            }
+
+            // Eliminar mensaje de la base de datos
+            mensajeGrupoRepository.delete(mensaje);
+            
+            // Notificar por WebSocket que el mensaje fue eliminado
+            messagingTemplate.convertAndSend("/topic/grupo/" + idGrupo + "/delete", idMensaje);
+            
+            return ResponseEntity.ok("Mensaje eliminado exitosamente");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al eliminar mensaje: " + e.getMessage());
+        }
+    }
 } 

@@ -306,32 +306,32 @@
                                 </span>
                             </div>
 
-                            <div class="card-body p-0">
-                                <div class="chat-container p-3" id="chatMessages" style="height: 400px; overflow-y: auto;">
-                                    <!-- Mensajes del chat (se cargarían dinámicamente) -->
-                                    <div class="alert alert-info text-center" th:if="${!isParticipante}">
-                                        <i class="bi bi-lock me-2"></i>
-                                        Debes unirte al grupo para acceder al chat
-                                    </div>
-                                </div>
+                                        <div class="card-body p-0" style="height: 500px; display: flex; flex-direction: column;">
+                <div class="chat-container p-3 flex-grow-1" id="chatMessages" style="overflow-y: auto; max-height: 100%;">
+                    <!-- Mensajes del chat (se cargarían dinámicamente) -->
+                    <div class="alert alert-info text-center" th:if="${!isParticipante}">
+                        <i class="bi bi-lock me-2"></i>
+                        Debes unirte al grupo para acceder al chat
+                    </div>
+                </div>
 
-                                <!-- Chat Input -->
-                                <div class="p-3 border-top" th:if="${isParticipante}">
-                                    <div class="input-group mb-2">
-                                        <input type="text" id="chatInput" class="form-control"
-                                            placeholder="Escribe un mensaje...">
-                                        <button id="sendBtn" class="btn btn-primary" type="button">
-                                            <i class="bi bi-send"></i>
-                                        </button>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <input type="file" id="imageInput" class="form-control" accept="image/*" style="display: none;">
-                                        <button id="imageBtn" class="btn btn-outline-secondary btn-sm me-2" type="button">
-                                            <i class="bi bi-image"></i> Enviar imagen
-                                        </button>
-                                        <small class="text-muted">Envía mensajes y fotos del viaje</small>
-                                    </div>
-                                </div>
+                                                <!-- Chat Input -->
+                <div class="p-3 border-top bg-white" th:if="${isParticipante}" style="flex-shrink: 0;">
+                    <div class="input-group mb-2">
+                        <input type="text" id="chatInput" class="form-control"
+                            placeholder="Escribe un mensaje...">
+                        <button id="sendBtn" class="btn btn-primary" type="button">
+                            <i class="bi bi-send"></i>
+                        </button>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <input type="file" id="imageInput" class="form-control" accept="image/*" style="display: none;">
+                        <button id="imageBtn" class="btn btn-outline-secondary btn-sm me-2" type="button">
+                            <i class="bi bi-image"></i> Enviar imagen
+                        </button>
+                        <small class="text-muted">Envía mensajes y fotos del viaje</small>
+                    </div>
+                </div>
                             </div>
                         </div>
                     </div>
@@ -688,10 +688,16 @@
                         const nuevoMensaje = JSON.parse(message.body);
                         appendMessage(nuevoMensaje);
                     });
+                    
+                    // Suscribirse al canal de eliminación de mensajes
+                    stompClient.subscribe('/topic/grupo/' + grupoId + '/delete', function (message) {
+                        const idMensajeEliminado = JSON.parse(message.body);
+                        removeMessage(idMensajeEliminado);
+                    });
                 }, function (error) {
                     console.log('WebSocket connection error: ' + error);
-                    // Fallback: actualizar mensajes cada 5 segundos si falla WebSocket
-                    setInterval(loadMessages, 5000);
+                    // Sin fallback automático para evitar actualizaciones molestas
+                    console.log('Chat funcionará solo con WebSocket cuando se reconecte');
                 });
             }
             
@@ -702,6 +708,8 @@
                 
                 const currentUserId = /*[[${usuarioId}]]*/ null;
                 const isCurrentUser = mensaje.remitente && mensaje.remitente.idUsuario === currentUserId;
+
+                messageDiv.setAttribute('data-message-id', mensaje.idMensaje);
 
                 if (isCurrentUser) {
                     // Mensaje del usuario actual (derecha)
@@ -715,6 +723,11 @@
                             </div>
                             <div class="flex-grow-1">
                                 <div class="d-flex align-items-center mb-1 justify-content-end">
+                                    <button class="btn btn-sm btn-outline-danger me-2 delete-message-btn" 
+                                            data-message-id="${mensaje.idMensaje}" 
+                                            title="Eliminar mensaje">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                     <small class="text-muted me-2">${formatDate(mensaje.fechaEnvio)}</small>
                                     <strong>Tú</strong>
                                 </div>
@@ -752,6 +765,7 @@
                 }
 
                 chatMessages.appendChild(messageDiv);
+                setupDeleteButtons(); // Configurar eventos de eliminar
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
         }
@@ -779,6 +793,8 @@
                 const messageDiv = document.createElement('div');
                 const isCurrentUser = mensaje.remitente && mensaje.remitente.idUsuario === currentUserId;
 
+                messageDiv.setAttribute('data-message-id', mensaje.idMensaje);
+
                 if (isCurrentUser) {
                     // Mensaje del usuario actual (derecha)
                     messageDiv.className = 'mb-3 d-flex justify-content-end';
@@ -791,6 +807,11 @@
                             </div>
                             <div class="flex-grow-1">
                                 <div class="d-flex align-items-center mb-1 justify-content-end">
+                                    <button class="btn btn-sm btn-outline-danger me-2 delete-message-btn" 
+                                            data-message-id="${mensaje.idMensaje}" 
+                                            title="Eliminar mensaje">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                     <small class="text-muted me-2">${formatDate(mensaje.fechaEnvio)}</small>
                                     <strong>Tú</strong>
                                 </div>
@@ -830,6 +851,9 @@
                 chatMessages.appendChild(messageDiv);
             });
 
+            // Configurar eventos de eliminar después de cargar todos los mensajes
+            setupDeleteButtons();
+            
             // Scroll al final
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
@@ -842,6 +866,49 @@
                 day: '2-digit',
                 month: '2-digit'
             });
+        }
+
+        // Función para configurar los eventos de eliminar mensaje
+        function setupDeleteButtons() {
+            document.querySelectorAll('.delete-message-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const messageId = this.getAttribute('data-message-id');
+                    if (confirm('¿Estás seguro de que quieres eliminar este mensaje?')) {
+                        deleteMessage(messageId);
+                    }
+                });
+            });
+        }
+
+        // Función para eliminar un mensaje
+        function deleteMessage(messageId) {
+            fetch(`/chat/grupo/${grupoId}/eliminar-mensaje/${messageId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.text())
+            .then(data => {
+                if (data.includes('exitosamente')) {
+                    // El mensaje se eliminará automáticamente via WebSocket
+                    console.log('Mensaje eliminado exitosamente');
+                } else {
+                    alert('Error al eliminar mensaje: ' + data);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar mensaje');
+            });
+        }
+
+        // Función para remover un mensaje del DOM cuando se elimina via WebSocket
+        function removeMessage(messageId) {
+            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (messageDiv) {
+                messageDiv.remove();
+            }
         }
 
         function setupModals() {
@@ -916,6 +983,49 @@
                 border: 1px solid #e9ecef;
                 border-radius: 18px 18px 18px 4px !important;
                 box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            
+            .delete-message-btn {
+                opacity: 0;
+                transition: opacity 0.2s;
+                border: none !important;
+                background: rgba(220, 53, 69, 0.1) !important;
+                color: #dc3545 !important;
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .delete-message-btn:hover {
+                background: rgba(220, 53, 69, 0.2) !important;
+                color: #dc3545 !important;
+            }
+            
+            .mb-3:hover .delete-message-btn {
+                opacity: 1;
+            }
+            
+            /* Mejorar el scrollbar del chat */
+            .chat-container::-webkit-scrollbar {
+                width: 6px;
+            }
+            
+            .chat-container::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 3px;
+            }
+            
+            .chat-container::-webkit-scrollbar-thumb {
+                background: #c1c1c1;
+                border-radius: 3px;
+            }
+            
+            .chat-container::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
             }
         `;
         const styleSheet = document.createElement('style');
