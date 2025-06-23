@@ -115,19 +115,9 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
             grupo.setEtiquetas(etiquetas);
         }
 
-        // Añadir al creador como participante
-        ParticipanteGrupo participante = new ParticipanteGrupo();
-        participante.setUsuario(creador);
-        participante.setGrupo(grupo);
-        participante.setRolParticipante("CREADOR");
-        participante.setEstadoSolicitud(EstadoSolicitud.ACEPTADO);
-        participante.setFechaUnion(LocalDateTime.now());
+        // NO agregamos al creador como participante porque ya es el creador
+        // El creador se cuenta por separado en las validaciones
 
-        // Inicializar conjuntos si son nulos
-        if (grupo.getParticipantes() == null) {
-            grupo.setParticipantes(new HashSet<>());
-        }
-        grupo.getParticipantes().add(participante);
         // Procesar itinerario desde JSON si existe
         if (dto.getDiasItinerarioJson() != null && !dto.getDiasItinerarioJson().isEmpty()) {
             try {

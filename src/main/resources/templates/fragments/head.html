@@ -16,6 +16,128 @@
 
         <!-- Google Fonts -->
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        
+        <!-- WebSocket libraries para notificaciones globales -->
+        <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    </th:block>
+    
+    <!-- Script global para notificaciones WebSocket -->
+    <th:block th:fragment="global-websocket" th:if="${#authorization.expression('isAuthenticated()') and usuarioId != null}">
+        <script th:inline="javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+                // ID del usuario para WebSocket
+                var usuarioId = /*[[${usuarioId}]]*/ null;
+                
+                if (usuarioId) {
+                    setupGlobalNotificationWebSocket(usuarioId);
+                }
+                
+                function setupGlobalNotificationWebSocket(userId) {
+                    var socket = new SockJS('/ws');
+                    var stompClient = Stomp.over(socket);
+                    
+                    stompClient.connect({}, function (frame) {
+                        console.log('Conectado a WebSocket de notificaciones globales: ' + frame);
+                        
+                        // Suscribirse al canal personal de notificaciones
+                        stompClient.subscribe('/queue/notificaciones/' + userId, function (message) {
+                            var nuevaNotificacion = JSON.parse(message.body);
+                            
+                            // Mostrar notificación toast
+                            mostrarNotificacionToast(nuevaNotificacion);
+                            
+                            // Actualizar contador en navbar
+                            actualizarContadorNotificaciones();
+                        });
+                    }, function (error) {
+                        console.log('Error en conexión WebSocket: ' + error);
+                    });
+                }
+                
+                function mostrarNotificacionToast(notificacion) {
+                    // Crear contenedor de toast si no existe
+                    var toastContainer = document.getElementById('toast-container');
+                    if (!toastContainer) {
+                        toastContainer = document.createElement('div');
+                        toastContainer.id = 'toast-container';
+                        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+                        toastContainer.style.zIndex = '9999';
+                        document.body.appendChild(toastContainer);
+                    }
+                    
+                    // Determinar tipo de notificación
+                    var bgClass = 'bg-primary';
+                    var iconClass = 'bi-bell';
+                    var textClass = 'text-white';
+                    
+                    if (notificacion.tipo === 'SOLICITUD_ACEPTADA') {
+                        bgClass = 'bg-success';
+                        iconClass = 'bi-check-circle';
+                    } else if (notificacion.tipo === 'SOLICITUD_RECHAZADA') {
+                        bgClass = 'bg-warning';
+                        iconClass = 'bi-x-circle';
+                        textClass = 'text-dark';
+                    } else if (notificacion.tipo === 'SOLICITUD_UNION') {
+                        bgClass = 'bg-info';
+                        iconClass = 'bi-person-plus';
+                    }
+                    
+                    // Crear toast
+                    var toastId = 'toast-' + Date.now();
+                    var toastHtml = `
+                        <div id="${toastId}" class="toast show ${bgClass} ${textClass}" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header ${bgClass} ${textClass} border-0">
+                                <i class="bi ${iconClass} me-2"></i>
+                                <strong class="me-auto">Nueva Notificación</strong>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                            <div class="toast-body">
+                                ${notificacion.contenido}
+                            </div>
+                        </div>
+                    `;
+                    
+                    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+                    
+                    // Auto-remover después de 8 segundos
+                    setTimeout(function() {
+                        var toastElement = document.getElementById(toastId);
+                        if (toastElement) {
+                            var toast = new bootstrap.Toast(toastElement);
+                            toast.hide();
+                            setTimeout(() => toastElement.remove(), 500);
+                        }
+                    }, 8000);
+                }
+                
+                function actualizarContadorNotificaciones() {
+                    // Hacer una petición para obtener el nuevo contador
+                    fetch('/notificaciones/api/count', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        var badge = document.querySelector('.navbar .badge.bg-danger');
+                        if (badge) {
+                            if (data.count > 0) {
+                                badge.textContent = data.count;
+                                badge.style.display = '';
+                            } else {
+                                badge.style.display = 'none';
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error actualizando contador:', error));
+                }
+            });
+        </script>
     </th:block>
 </head>
 </html>

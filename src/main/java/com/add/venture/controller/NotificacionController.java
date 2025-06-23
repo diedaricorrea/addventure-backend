@@ -3,6 +3,7 @@ package com.add.venture.controller;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -140,6 +141,28 @@ public class NotificacionController {
             return ResponseEntity.badRequest().body("Usuario no autenticado");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al eliminar las notificaciones");
+        }
+    }
+
+    @GetMapping("/api/count")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> contarNotificacionesNoLeidas() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+                String email = auth.getName();
+                Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+                if (usuarioOpt.isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Usuario no encontrado"));
+                }
+                Usuario usuario = usuarioOpt.get();
+
+                long count = notificacionService.contarNotificacionesNoLeidas(usuario);
+                return ResponseEntity.ok(Map.of("count", count));
+            }
+            return ResponseEntity.badRequest().body(Map.of("error", "Usuario no autenticado"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Error al contar notificaciones"));
         }
     }
 

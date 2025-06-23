@@ -7,6 +7,8 @@
     <title>Detalle de Grupo - AddVenture</title>
     <!-- BLOQUE DE LINKS FRAGMENTS -->
     <th:block th:replace="~{fragments/head :: head-links}"></th:block>
+    <!-- WebSocket global para notificaciones -->
+    <th:block th:replace="~{fragments/head :: global-websocket}"></th:block>
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/css/detalle-grupo.css}">
 
@@ -188,7 +190,7 @@
                                                 <div>
                                                     <p class="text-muted small mb-0">Participantes</p>
                                                     <p class="fw-medium mb-0">
-                                                        <span th:text="${totalMiembros != null ? totalMiembros : 1}">1</span> de <span
+                                                        <span th:text="${participantesAceptados}">1</span> de <span
                                                             th:text="${grupo.maxParticipantes}"></span>
                                                     </p>
                                                 </div>
@@ -296,7 +298,7 @@
                                             Grupo</span></h5>
                                 </div>
                                 <span class="badge bg-white text-primary">
-                                    <span th:text="${totalMiembros != null ? totalMiembros : 1}">1</span>
+                                    <span th:text="${participantesAceptados + 1}">1</span>
                                     participantes
                                 </span>
                             </div>

@@ -56,4 +56,13 @@ public interface ParticipanteGrupoRepository extends JpaRepository<ParticipanteG
      * @return número de participantes con el estado especificado
      */
     long countByGrupoAndEstadoSolicitud(GrupoViaje grupo, EstadoSolicitud estado);
+
+    /**
+     * Busca participaciones de un usuario por estado de solicitud
+     * 
+     * @param usuario el usuario
+     * @param estado el estado de la solicitud
+     * @return lista de participaciones del usuario con el estado especificado
+     */
+    List<ParticipanteGrupo> findByUsuarioAndEstadoSolicitud(Usuario usuario, EstadoSolicitud estado);
 }

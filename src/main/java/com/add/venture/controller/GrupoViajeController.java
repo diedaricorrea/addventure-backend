@@ -128,6 +128,9 @@ public class GrupoViajeController {
             String email = auth.getName();
             Usuario usuario = usuarioRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
+            // Agregar usuarioId para WebSocket global
+            model.addAttribute("usuarioId", usuario.getIdUsuario());
 
             // Verificar si es participante ACEPTADO
             Optional<ParticipanteGrupo> participante = participanteGrupoRepository.findByUsuarioAndGrupo(usuario, grupo);
@@ -190,7 +193,7 @@ public class GrupoViajeController {
                 return ResponseEntity.badRequest().body(response);
             }
 
-            // Verificar capacidad del grupo
+            // Verificar capacidad del grupo (sin contar al creador)
             List<ParticipanteGrupo> participantesAceptados = participanteGrupoRepository.findByGrupoAndEstadoSolicitud(grupo, EstadoSolicitud.ACEPTADO);
             if (participantesAceptados.size() >= grupo.getMaxParticipantes() - 1) {
                 response.put("success", false);
@@ -443,7 +446,6 @@ public class GrupoViajeController {
     }
 
     // Método para mostrar los viajes del usuario autenticado
-
     @GetMapping("/mis-viajes")
     public String mostrarMisViajes(Model model) {
         usuarioAutenticadoHelper.cargarDatosUsuarioParaNavbar(model);
@@ -453,16 +455,50 @@ public class GrupoViajeController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
             model.addAttribute("error", "Usuario no autenticado");
-            model.addAttribute("grupos", List.of());
-            // Si no está autenticado, se manda un mensaje de error al modelo y se carga una
-            // lista vacía en grupos, para que la vista no falle.
+            model.addAttribute("gruposCreados", List.of());
+            model.addAttribute("gruposUnidos", List.of());
+            model.addAttribute("gruposCerrados", List.of());
         } else {
             String email = auth.getName();
             Usuario usuario = usuarioRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-            List<GrupoViaje> gruposDelUsuario = grupoViajeRepository.findByCreador(usuario);
-            model.addAttribute("grupos", gruposDelUsuario);
+            // 1. Grupos creados por el usuario
+            List<GrupoViaje> gruposCreados = grupoViajeRepository.findByCreador(usuario);
+            
+            // 2. Grupos donde el usuario es participante (no creador)
+            List<ParticipanteGrupo> participaciones = participanteGrupoRepository
+                    .findByUsuarioAndEstadoSolicitud(usuario, EstadoSolicitud.ACEPTADO);
+            
+            List<GrupoViaje> gruposUnidos = participaciones.stream()
+                    .map(ParticipanteGrupo::getGrupo)
+                    .filter(grupo -> !grupo.getCreador().equals(usuario)) // Excluir grupos propios
+                    .collect(Collectors.toList());
+            
+            // 3. Separar grupos activos y cerrados
+            List<GrupoViaje> gruposActivosCreados = gruposCreados.stream()
+                    .filter(grupo -> "activo".equals(grupo.getEstado()))
+                    .collect(Collectors.toList());
+            
+            List<GrupoViaje> gruposActivosUnidos = gruposUnidos.stream()
+                    .filter(grupo -> "activo".equals(grupo.getEstado()))
+                    .collect(Collectors.toList());
+            
+            List<GrupoViaje> gruposCerrados = gruposCreados.stream()
+                    .filter(grupo -> "cerrado".equals(grupo.getEstado()) || "concluido".equals(grupo.getEstado()))
+                    .collect(Collectors.toList());
+            
+            // Agregar también grupos unidos que estén cerrados
+            List<GrupoViaje> gruposUnidosCerrados = gruposUnidos.stream()
+                    .filter(grupo -> "cerrado".equals(grupo.getEstado()) || "concluido".equals(grupo.getEstado()))
+                    .collect(Collectors.toList());
+            
+            gruposCerrados.addAll(gruposUnidosCerrados);
+
+            model.addAttribute("gruposCreados", gruposActivosCreados);
+            model.addAttribute("gruposUnidos", gruposActivosUnidos);
+            model.addAttribute("gruposCerrados", gruposCerrados);
+            model.addAttribute("totalGrupos", gruposCreados.size() + gruposUnidos.size());
         }
 
         model.addAttribute("tiposViaje", grupoViajeService.obtenerTiposViaje());
