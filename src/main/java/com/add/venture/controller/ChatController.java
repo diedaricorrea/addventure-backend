@@ -32,6 +32,7 @@ import com.add.venture.repository.GrupoViajeRepository;
 import com.add.venture.repository.MensajeGrupoRepository;
 import com.add.venture.repository.ParticipanteGrupoRepository;
 import com.add.venture.repository.UsuarioRepository;
+import com.add.venture.service.IPermisosService;
 
 @Controller
 @RequestMapping("/chat")
@@ -52,6 +53,9 @@ public class ChatController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
+    @Autowired
+    private IPermisosService permisosService;
+
     private final String UPLOAD_DIR = "uploads/chat";
 
     @GetMapping("/grupo/{idGrupo}/mensajes")
@@ -70,9 +74,8 @@ public class ChatController {
             GrupoViaje grupo = grupoViajeRepository.findById(idGrupo)
                     .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
 
-            // Verificar que el usuario es participante aceptado del grupo
-            Optional<ParticipanteGrupo> participante = participanteGrupoRepository.findByUsuarioAndGrupo(usuario, grupo);
-            if (participante.isEmpty() || participante.get().getEstadoSolicitud() != EstadoSolicitud.ACEPTADO) {
+            // Verificar que el usuario tiene permiso para acceder al chat
+            if (!permisosService.usuarioTienePermiso(usuario, grupo, "ACCEDER_CHAT")) {
                 return ResponseEntity.badRequest().body("No tienes acceso al chat de este grupo");
             }
 
@@ -101,10 +104,9 @@ public class ChatController {
             GrupoViaje grupo = grupoViajeRepository.findById(idGrupo)
                     .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
 
-            // Verificar que el usuario es participante aceptado del grupo
-            Optional<ParticipanteGrupo> participante = participanteGrupoRepository.findByUsuarioAndGrupo(usuario, grupo);
-            if (participante.isEmpty() || participante.get().getEstadoSolicitud() != EstadoSolicitud.ACEPTADO) {
-                return ResponseEntity.badRequest().body("No tienes acceso al chat de este grupo");
+            // Verificar que el usuario tiene permiso para enviar mensajes
+            if (!permisosService.usuarioTienePermiso(usuario, grupo, "ENVIAR_MENSAJES")) {
+                return ResponseEntity.badRequest().body("No tienes permiso para enviar mensajes en este grupo");
             }
 
             if (mensaje == null || mensaje.trim().isEmpty()) {
@@ -160,11 +162,10 @@ public class ChatController {
 
             System.out.println("Grupo encontrado: " + grupo.getNombreViaje());
 
-            // Verificar que el usuario es participante aceptado del grupo
-            Optional<ParticipanteGrupo> participante = participanteGrupoRepository.findByUsuarioAndGrupo(usuario, grupo);
-            if (participante.isEmpty() || participante.get().getEstadoSolicitud() != EstadoSolicitud.ACEPTADO) {
-                System.out.println("ERROR: Usuario no tiene acceso al chat");
-                return ResponseEntity.badRequest().body("No tienes acceso al chat de este grupo");
+            // Verificar que el usuario tiene permiso para compartir archivos
+            if (!permisosService.usuarioTienePermiso(usuario, grupo, "COMPARTIR_ARCHIVOS")) {
+                System.out.println("ERROR: Usuario no tiene permiso para compartir archivos");
+                return ResponseEntity.badRequest().body("No tienes permiso para compartir archivos en este grupo");
             }
 
             System.out.println("Usuario tiene acceso al chat");
@@ -348,4 +349,148 @@ public class ChatController {
             return ResponseEntity.badRequest().body("Error al eliminar mensaje: " + e.getMessage());
         }
     }
+
+    @GetMapping("/debug/permisos/{idGrupo}")
+    @ResponseBody
+    public ResponseEntity<?> debugPermisos(@PathVariable("idGrupo") Long idGrupo) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
+                return ResponseEntity.badRequest().body("Usuario no autenticado");
+            }
+
+            String email = auth.getName();
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            GrupoViaje grupo = grupoViajeRepository.findById(idGrupo)
+                    .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
+
+            // Crear respuesta de depuración
+            StringBuilder debug = new StringBuilder();
+            debug.append("=== DEBUG PERMISOS ===\n");
+            debug.append("Usuario: ").append(usuario.getEmail()).append(" (ID: ").append(usuario.getIdUsuario()).append(")\n");
+            debug.append("Grupo: ").append(grupo.getNombreViaje()).append(" (ID: ").append(grupo.getIdGrupo()).append(")\n");
+            debug.append("Creador del grupo: ").append(grupo.getCreador().getEmail()).append(" (ID: ").append(grupo.getCreador().getIdUsuario()).append(")\n");
+            debug.append("¿Es creador? ").append(permisosService.esCreadorDelGrupo(usuario, grupo)).append("\n");
+            
+            // Verificar rol en UsuarioRolGrupo
+            var rol = permisosService.obtenerRolEnGrupo(usuario, grupo);
+            debug.append("Rol en grupo: ").append(rol != null ? rol.getNombreRol() : "NINGUNO").append("\n");
+            
+            // Verificar permisos específicos
+            String[] permisosAVerificar = {"ACCEDER_CHAT", "ENVIAR_MENSAJES", "COMPARTIR_ARCHIVOS", "EDITAR_GRUPO"};
+            debug.append("\nPermisos:\n");
+            for (String permiso : permisosAVerificar) {
+                boolean tiene = permisosService.usuarioTienePermiso(usuario, grupo, permiso);
+                debug.append("- ").append(permiso).append(": ").append(tiene ? "✅ SÍ" : "❌ NO").append("\n");
+            }
+            
+            return ResponseEntity.ok(debug.toString());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error en debug: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/fix/roles-creadores")
+    @ResponseBody
+    public ResponseEntity<?> corregirRolesCreadores() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
+                return ResponseEntity.badRequest().body("Usuario no autenticado");
+            }
+
+            String email = auth.getName();
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            StringBuilder resultado = new StringBuilder();
+            resultado.append("=== CORRECCIÓN DE ROLES DE CREADORES ===\n");
+
+            // Buscar todos los grupos donde este usuario es creador
+            List<GrupoViaje> gruposCreados = grupoViajeRepository.findByCreador(usuario);
+            resultado.append("Grupos encontrados donde eres creador: ").append(gruposCreados.size()).append("\n\n");
+
+            int rolesAsignados = 0;
+
+            for (GrupoViaje grupo : gruposCreados) {
+                resultado.append("Grupo: ").append(grupo.getNombreViaje()).append("\n");
+                
+                // Verificar si ya tiene rol
+                var rolActual = permisosService.obtenerRolEnGrupo(usuario, grupo);
+                resultado.append("- Rol actual: ").append(rolActual != null ? rolActual.getNombreRol() : "NINGUNO").append("\n");
+                
+                if (rolActual == null || !rolActual.getNombreRol().equals("LÍDER_GRUPO")) {
+                    try {
+                        // Asignar rol de líder
+                        permisosService.asignarRolLiderCreador(usuario, grupo);
+                        rolesAsignados++;
+                        resultado.append("- ✅ LÍDER_GRUPO asignado correctamente\n");
+                    } catch (Exception e) {
+                        resultado.append("- ❌ Error al asignar rol: ").append(e.getMessage()).append("\n");
+                    }
+                } else {
+                    resultado.append("- ✅ Ya tiene rol de LÍDER_GRUPO\n");
+                }
+                resultado.append("\n");
+            }
+
+            resultado.append("=== RESUMEN ===\n");
+            resultado.append("Roles asignados: ").append(rolesAsignados).append("\n");
+            resultado.append("Corrección completada.\n");
+
+            return ResponseEntity.ok(resultado.toString());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error en corrección: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/test/creador/{idGrupo}")
+    @ResponseBody
+    public ResponseEntity<?> testCreador(@PathVariable("idGrupo") Long idGrupo) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
+                return ResponseEntity.badRequest().body("Usuario no autenticado");
+            }
+
+            String email = auth.getName();
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            GrupoViaje grupo = grupoViajeRepository.findById(idGrupo)
+                    .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
+
+            StringBuilder resultado = new StringBuilder();
+            resultado.append("=== TEST CREADOR ===\n");
+            
+            // Test 1: ¿Es creador?
+            resultado.append("\n--- TEST 1: ¿Es creador? ---\n");
+            boolean esCreador = permisosService.esCreadorDelGrupo(usuario, grupo);
+            resultado.append("Resultado: ").append(esCreador).append("\n");
+            
+            // Test 2: ¿Puede acceder al chat?
+            resultado.append("\n--- TEST 2: ¿Puede acceder al chat? ---\n");
+            boolean puedeAcceder = permisosService.usuarioTienePermiso(usuario, grupo, "ACCEDER_CHAT");
+            resultado.append("Resultado: ").append(puedeAcceder).append("\n");
+            
+            // Test 3: ¿Puede enviar mensajes?
+            resultado.append("\n--- TEST 3: ¿Puede enviar mensajes? ---\n");
+            boolean puedeEnviar = permisosService.usuarioTienePermiso(usuario, grupo, "ENVIAR_MENSAJES");
+            resultado.append("Resultado: ").append(puedeEnviar).append("\n");
+
+            resultado.append("\n=== RESUMEN ===\n");
+            resultado.append("Usuario: ").append(usuario.getEmail()).append("\n");
+            resultado.append("Grupo: ").append(grupo.getNombreViaje()).append("\n");
+            resultado.append("Es creador: ").append(esCreador).append("\n");
+            resultado.append("Puede acceder: ").append(puedeAcceder).append("\n");
+            resultado.append("Puede enviar: ").append(puedeEnviar).append("\n");
+            
+            return ResponseEntity.ok(resultado.toString());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error en test: " + e.getMessage());
+        }
+    }
+
 } 

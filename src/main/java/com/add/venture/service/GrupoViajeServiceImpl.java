@@ -49,6 +49,9 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
     @Autowired
     private EtiquetaRepository etiquetaRepository;
 
+    @Autowired
+    private IPermisosService permisosService;
+
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -149,7 +152,17 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
         }
 
         // Guardar el grupo final sin volver a establecer la relación con el viaje
-        return grupoViajeRepository.save(grupo);
+        grupo = grupoViajeRepository.save(grupo);
+        
+        // Asignar automáticamente el rol de líder al creador del grupo
+        try {
+            permisosService.asignarRolLiderCreador(creador, grupo);
+        } catch (Exception e) {
+            // Log del error pero no fallar la creación del grupo
+            System.err.println("Error al asignar rol de líder: " + e.getMessage());
+        }
+        
+        return grupo;
     }
 
     @Override

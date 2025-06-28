@@ -43,6 +43,7 @@ import com.add.venture.repository.UsuarioRepository;
 import com.add.venture.repository.ViajeRepository;
 import com.add.venture.service.IGrupoViajeService;
 import com.add.venture.service.INotificacionService;
+import com.add.venture.service.IPermisosService;
 
 import jakarta.validation.Valid;
 
@@ -73,6 +74,9 @@ public class GrupoViajeController {
 
     @Autowired
     private INotificacionService notificacionService;
+
+    @Autowired
+    private IPermisosService permisosService;
 
     @GetMapping
     public String listarGrupos(
@@ -143,10 +147,11 @@ public class GrupoViajeController {
             // Agregar usuarioId para WebSocket global
             model.addAttribute("usuarioId", usuario.getIdUsuario());
 
-            // Verificar si es participante ACEPTADO
+            // Verificar si es participante ACEPTADO o es el CREADOR del grupo
             Optional<ParticipanteGrupo> participante = participanteGrupoRepository.findByUsuarioAndGrupo(usuario, grupo);
-            boolean isParticipante = participante.isPresent() && 
-                                   participante.get().getEstadoSolicitud() == EstadoSolicitud.ACEPTADO;
+            boolean isParticipante = (participante.isPresent() && 
+                                   participante.get().getEstadoSolicitud() == EstadoSolicitud.ACEPTADO) ||
+                                   grupo.getCreador().equals(usuario); // El creador también puede usar el chat
             model.addAttribute("isParticipante", isParticipante);
             
             // Verificar estado de solicitud si existe
@@ -311,6 +316,14 @@ public class GrupoViajeController {
 
         // Eliminar participante
         participanteGrupoRepository.delete(participanteOpt.get());
+        
+        // IMPORTANTE: Remover rol en el nuevo sistema de permisos
+        try {
+            permisosService.removerRolEnGrupo(usuario, grupo, null);
+            System.out.println("Rol removido para " + usuario.getEmail() + " al abandonar grupo " + grupo.getNombreViaje());
+        } catch (Exception e) {
+            System.err.println("Error al remover rol al abandonar grupo: " + e.getMessage());
+        }
 
         redirectAttributes.addFlashAttribute("mensaje", "Has abandonado el grupo exitosamente");
         return "redirect:/grupos";

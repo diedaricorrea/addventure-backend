@@ -60,6 +60,8 @@ public class SecurityConfig {
                                 "/grupos/*") // Ver detalles de grupo (GET público)
                         .permitAll()
                         // Rutas que requieren autenticación
+                        // NOTA: Los permisos específicos ahora se manejan a nivel de servicio
+                        // usando el sistema de roles y permisos implementado
                         .requestMatchers(
                                 "/grupos/*/unirse",
                                 "/grupos/*/abandonar", 

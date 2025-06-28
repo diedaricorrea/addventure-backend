@@ -31,6 +31,7 @@ import com.add.venture.repository.NotificacionRepository;
 import com.add.venture.repository.ParticipanteGrupoRepository;
 import com.add.venture.repository.UsuarioRepository;
 import com.add.venture.service.INotificacionService;
+import com.add.venture.service.IPermisosService;
 
 @Controller
 @RequestMapping("/notificaciones")
@@ -53,6 +54,9 @@ public class NotificacionController {
 
     @Autowired
     private ParticipanteGrupoRepository participanteGrupoRepository;
+
+    @Autowired
+    private IPermisosService permisosService;
 
     @GetMapping
     public String listarNotificaciones(Model model) {
@@ -239,6 +243,20 @@ public class NotificacionController {
                 }
                 participanteGrupoRepository.save(solicitud);
                 
+                // IMPORTANTE: Asignar rol de MIEMBRO en el nuevo sistema de permisos
+                try {
+                    permisosService.asignarRolEnGrupo(
+                        solicitante, 
+                        grupo, 
+                        permisosService.obtenerRolPorNombre("MIEMBRO"), 
+                        lider
+                    );
+                    System.out.println("Rol MIEMBRO asignado a " + solicitante.getEmail() + " en grupo " + grupo.getNombreViaje());
+                } catch (Exception e) {
+                    System.err.println("Error al asignar rol de miembro: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                
                 // Enviar notificación de aceptación al solicitante
                 try {
                     notificacionService.crearNotificacionSolicitudAceptada(solicitante, grupo.getNombreViaje());
@@ -262,6 +280,14 @@ public class NotificacionController {
                             .fechaUnion(LocalDateTime.now())
                             .build();
                     participanteGrupoRepository.save(solicitud);
+                }
+                
+                // IMPORTANTE: Remover rol si existía en el nuevo sistema de permisos
+                try {
+                    permisosService.removerRolEnGrupo(solicitante, grupo, lider);
+                    System.out.println("Rol removido para " + solicitante.getEmail() + " en grupo " + grupo.getNombreViaje());
+                } catch (Exception e) {
+                    System.err.println("Error al remover rol: " + e.getMessage());
                 }
                 
                 // Enviar notificación de rechazo al solicitante con información de intentos
