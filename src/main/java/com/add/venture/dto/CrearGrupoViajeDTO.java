@@ -2,6 +2,9 @@ package com.add.venture.dto;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Max;
@@ -70,11 +73,30 @@ public class CrearGrupoViajeDTO {
     @Size(max = 10, message = "No puede agregar más de 10 etiquetas")
     private List<String> etiquetas;
     
+    // Campo auxiliar para recibir etiquetas como string separado por comas
+    private String etiquetasString;
+    
     // Para almacenar el JSON del itinerario
     private String diasItinerarioJson;
     
     // Para itinerario (se usará en el servicio)
     private List<DiaItinerarioDTO> diasItinerario;
+    
+    // Setter personalizado para procesar etiquetas desde string
+    public void setEtiquetasString(String etiquetasString) {
+        this.etiquetasString = etiquetasString;
+        if (etiquetasString != null && !etiquetasString.trim().isEmpty()) {
+            // Convertir string separado por comas a lista
+            this.etiquetas = Arrays.asList(etiquetasString.split(","));
+            // Limpiar espacios en blanco
+            this.etiquetas = this.etiquetas.stream()
+                .map(String::trim)
+                .filter(tag -> !tag.isEmpty())
+                .collect(Collectors.toList());
+        } else {
+            this.etiquetas = new ArrayList<>();
+        }
+    }
     
     // Validación personalizada para fechas
     public boolean isFechaFinDespuesDeFechaInicio() {

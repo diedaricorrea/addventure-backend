@@ -191,15 +191,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar etiquetas existentes en modo edición
     if (isEditMode && etiquetasHidden && etiquetasHidden.value) {
-        try {
-            const etiquetasExistentes = JSON.parse(etiquetasHidden.value);
-            if (Array.isArray(etiquetasExistentes)) {
-                tags = etiquetasExistentes;
-                updateTagsDisplay();
-            }
-        } catch (e) {
-            console.error('Error al cargar etiquetas existentes:', e);
-        }
+        // Parsear etiquetas desde string separado por comas
+        tags = etiquetasHidden.value.split(',').filter(tag => tag.trim() !== '');
+        updateTagsDisplay();
     }
     
     if (etiquetasInput) {
@@ -290,7 +284,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateHiddenField() {
         if (etiquetasHidden) {
-            etiquetasHidden.value = JSON.stringify(tags);
+            // Enviar etiquetas como string separado por comas
+            etiquetasHidden.value = tags.join(',');
         }
     }    
 
