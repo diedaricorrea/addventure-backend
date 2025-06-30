@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head}">
+    <title>Galería de Fotos - AddVenture</title>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+
+    <div class="container my-5">
+        <!-- Encabezado de la galería -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h2 class="text-primary mb-2">
+                            <i class="bi bi-images"></i> Galería de Fotos
+                        </h2>
+                        <h5 class="text-muted" th:text="${grupo.nombreViaje}">Nombre del Viaje</h5>
+                        <small class="text-muted">
+                            <span th:text="${grupo.viaje.destinoPrincipal}">Destino</span> • 
+                            <span th:text="${#temporals.format(grupo.viaje.fechaInicio, 'dd/MM/yyyy')}">Fecha inicio</span> - 
+                            <span th:text="${#temporals.format(grupo.viaje.fechaFin, 'dd/MM/yyyy')}">Fecha fin</span>
+                        </small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-primary fs-6 me-2" th:text="${totalImagenes + ' imágenes'}">0 imágenes</span>
+                        <a th:href="@{/grupos/{id}(id=${grupo.idGrupo})}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al grupo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aviso de seguridad -->
+        <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+            <i class="bi bi-info-circle-fill me-3"></i>
+            <div>
+                <strong>🔒 Política de Privacidad:</strong> 
+                Por motivos de seguridad y privacidad, todas las imágenes compartidas en este grupo serán eliminadas automáticamente 
+                <strong>1 mes después</strong> del cierre del viaje. Te recomendamos descargar tus fotos favoritas antes de esa fecha.
+            </div>
+        </div>
+
+        <!-- Barra de descarga -->
+        <div class="card mb-4" th:if="${totalImagenes > 0}">
+            <div class="card-body text-center">
+                <h5 class="card-title mb-3">💾 Descarga todas las fotos</h5>
+                <p class="card-text text-muted mb-3">
+                    Descarga todas las <span th:text="${totalImagenes}">0</span> imágenes compartidas durante el viaje en un archivo ZIP.
+                </p>
+                <a th:href="@{/grupos/{id}/descargar-fotos(id=${grupo.idGrupo})}" 
+                   class="btn btn-primary btn-lg">
+                    <i class="bi bi-download me-2"></i>
+                    Descargar todas las fotos (ZIP)
+                </a>
+            </div>
+        </div>
+
+        <!-- Galería de imágenes -->
+        <div th:if="${totalImagenes > 0}">
+            <div class="row g-3">
+                <div class="col-md-4 col-lg-3" th:each="imagen : ${imagenesCompartidas}">
+                    <div class="card h-100 shadow-sm imagen-card">
+                        <div class="position-relative">
+                            <img th:src="${imagen.archivoUrl}" 
+                                 class="card-img-top imagen-preview" 
+                                 style="height: 200px; object-fit: cover; cursor: pointer;"
+                                 th:alt="'Foto compartida por ' + ${imagen.remitente.nombre}"
+                                 data-bs-toggle="modal" 
+                                 th:data-bs-target="'#modalImagen' + ${imagen.idMensaje}">
+                            
+                            <!-- Badge con nombre del autor -->
+                            <div class="position-absolute top-0 start-0 m-2">
+                                <span class="badge bg-dark bg-opacity-75">
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    <span th:text="${imagen.remitente.nombre}">Usuario</span>
+                                </span>
+                            </div>
+
+                            <!-- Badge con fecha -->
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <span class="badge bg-dark bg-opacity-75">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    <span th:text="${#temporals.format(imagen.fechaEnvio, 'dd/MM')}">Fecha</span>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-clock me-1"></i>
+                                    <span th:text="${#temporals.format(imagen.fechaEnvio, 'HH:mm')}">Hora</span>
+                                </small>
+                                <a th:href="${imagen.archivoUrl}" 
+                                   download 
+                                   th:download="${imagen.archivoNombre}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal para vista ampliada -->
+                    <div class="modal fade" th:id="'modalImagen' + ${imagen.idMensaje}" tabindex="-1">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="bi bi-person-circle me-2"></i>
+                                        <span th:text="${imagen.remitente.nombre + ' ' + imagen.remitente.apellidos}">Autor</span>
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body text-center p-0">
+                                    <img th:src="${imagen.archivoUrl}" 
+                                         class="img-fluid" 
+                                         style="max-height: 70vh; width: auto;">
+                                </div>
+                                <div class="modal-footer justify-content-between">
+                                    <div class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        <span th:text="${#temporals.format(imagen.fechaEnvio, 'dd/MM/yyyy HH:mm')}">Fecha y hora</span>
+                                    </div>
+                                    <a th:href="${imagen.archivoUrl}" 
+                                       download 
+                                       th:download="${imagen.archivoNombre}"
+                                       class="btn btn-primary">
+                                        <i class="bi bi-download me-2"></i>
+                                        Descargar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mensaje cuando no hay imágenes -->
+        <div th:if="${totalImagenes == 0}" class="text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-images text-muted" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="text-muted mb-3">No hay fotos compartidas</h3>
+            <p class="text-muted mb-4">
+                No se han compartido imágenes en el chat de este grupo durante el viaje.
+            </p>
+            <a th:href="@{/grupos/{id}(id=${grupo.idGrupo})}" class="btn btn-primary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Volver al grupo
+            </a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+    <!-- Scripts de Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <style>
+        .imagen-card {
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .imagen-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .imagen-preview:hover {
+            opacity: 0.9;
+        }
+        
+        .badge {
+            font-size: 0.7rem;
+        }
+    </style>
+</body>
+</html> 

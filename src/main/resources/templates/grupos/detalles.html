@@ -333,11 +333,11 @@
                                         <i class="bi bi-trash me-2"></i> Eliminar grupo
                                     </button>
 
-                                    <!-- Ver historial del chat (si el viaje está cerrado y fue participante) -->
-                                    <a th:href="@{/grupos/{id}/historial-chat(id=${grupo.idGrupo})}" class="btn btn-outline-info"
-                                       th:if="${#authentication.isAuthenticated() && @permisos.puedeAccederChat(grupo.idGrupo) && grupo.estado == 'cerrado'}">
-                                        <i class="bi bi-chat-square-text me-2"></i> Ver historial del chat
-                                    </a>
+                                                        <!-- Ver galería de fotos (si el viaje está cerrado/concluido y fue participante) -->
+                    <a th:href="@{/grupos/{id}/galeria-fotos(id=${grupo.idGrupo})}" class="btn btn-outline-info"
+                       th:if="${#authentication.isAuthenticated() && @permisos.puedeAccederChat(grupo.idGrupo) && (grupo.estado == 'cerrado' || grupo.estado == 'concluido')}">
+                        <i class="bi bi-images me-2"></i> Ver galería de fotos
+                    </a>
                                 </div>
                             </div>
                         </div>

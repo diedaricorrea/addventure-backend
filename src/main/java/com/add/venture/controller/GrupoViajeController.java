@@ -1,6 +1,11 @@
 package com.add.venture.controller;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.time.Duration;
@@ -9,9 +14,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -348,8 +357,8 @@ public class GrupoViajeController {
         return "redirect:/grupos";
     }
 
-    @GetMapping("/{id}/historial-chat")
-    public String verHistorialChat(@PathVariable("id") Long idGrupo, Model model) {
+    @GetMapping("/{id}/galeria-fotos")
+    public String verGaleriaFotos(@PathVariable("id") Long idGrupo, Model model) {
         usuarioAutenticadoHelper.cargarDatosUsuarioParaNavbar(model);
         usuarioAutenticadoHelper.cargarUsuarioParaPerfil(model);
 
@@ -365,20 +374,134 @@ public class GrupoViajeController {
         GrupoViaje grupo = grupoViajeRepository.findById(idGrupo)
                 .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
 
-        // Verificar que el usuario fue participante del grupo
-        Optional<ParticipanteGrupo> participante = participanteGrupoRepository.findByUsuarioAndGrupo(usuario, grupo);
-        if (participante.isEmpty() || participante.get().getEstadoSolicitud() != EstadoSolicitud.ACEPTADO) {
+        // Verificar que el usuario fue participante del grupo (incluyendo al creador)
+        boolean esParticipante = false;
+        if (grupo.getCreador().equals(usuario)) {
+            esParticipante = true;
+        } else {
+            Optional<ParticipanteGrupo> participante = participanteGrupoRepository.findByUsuarioAndGrupo(usuario, grupo);
+            if (participante.isPresent() && participante.get().getEstadoSolicitud() == EstadoSolicitud.ACEPTADO) {
+                esParticipante = true;
+            }
+        }
+
+        if (!esParticipante) {
             return "redirect:/grupos";
         }
 
-        // Obtener mensajes del chat
-        List<MensajeGrupo> mensajes = mensajeGrupoRepository.findByGrupoOrderByFechaEnvioAsc(grupo);
+        // Verificar que el grupo esté cerrado o concluido para acceder a la galería
+        if (!"cerrado".equals(grupo.getEstado()) && !"concluido".equals(grupo.getEstado())) {
+            return "redirect:/grupos/" + idGrupo;
+        }
+
+        // Obtener solo las imágenes compartidas en el chat
+        List<MensajeGrupo> imagenesCompartidas = mensajeGrupoRepository.findByGrupoAndTipoMensajeOrderByFechaEnvioDesc(grupo, "imagen");
 
         model.addAttribute("grupo", grupo);
-        model.addAttribute("mensajes", mensajes);
-        model.addAttribute("esHistorial", true);
+        model.addAttribute("imagenesCompartidas", imagenesCompartidas);
+        model.addAttribute("totalImagenes", imagenesCompartidas.size());
 
-        return "grupos/historial-chat";
+        return "grupos/galeria-fotos";
+    }
+
+    @GetMapping("/{id}/descargar-fotos")
+    public ResponseEntity<byte[]> descargarTodasLasFotos(@PathVariable("id") Long idGrupo) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            String email = auth.getName();
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            GrupoViaje grupo = grupoViajeRepository.findById(idGrupo)
+                    .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
+
+            // Verificar que el usuario fue participante del grupo (incluyendo al creador)
+            boolean esParticipante = false;
+            if (grupo.getCreador().equals(usuario)) {
+                esParticipante = true;
+            } else {
+                Optional<ParticipanteGrupo> participante = participanteGrupoRepository.findByUsuarioAndGrupo(usuario, grupo);
+                if (participante.isPresent() && participante.get().getEstadoSolicitud() == EstadoSolicitud.ACEPTADO) {
+                    esParticipante = true;
+                }
+            }
+
+            if (!esParticipante) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            // Verificar que el grupo esté cerrado o concluido
+            if (!"cerrado".equals(grupo.getEstado()) && !"concluido".equals(grupo.getEstado())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            // Obtener todas las imágenes del grupo
+            List<MensajeGrupo> imagenesCompartidas = mensajeGrupoRepository.findByGrupoAndTipoMensajeOrderByFechaEnvioDesc(grupo, "imagen");
+
+            if (imagenesCompartidas.isEmpty()) {
+                return ResponseEntity.noContent().build();
+            }
+
+            // Crear archivo ZIP con todas las imágenes
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ZipOutputStream zos = new ZipOutputStream(baos);
+
+            int contador = 1;
+            for (MensajeGrupo mensaje : imagenesCompartidas) {
+                if (mensaje.getArchivoUrl() != null) {
+                    try {
+                        // Obtener la ruta completa del archivo
+                        String rutaArchivo = mensaje.getArchivoUrl();
+                        if (rutaArchivo.startsWith("/uploads/")) {
+                            rutaArchivo = "uploads/" + rutaArchivo.substring("/uploads/".length());
+                        }
+                        
+                        Path archivoPath = Paths.get(rutaArchivo);
+                        if (Files.exists(archivoPath)) {
+                            // Crear entrada en el ZIP
+                            String nombreArchivo = String.format("%03d_%s_%s", 
+                                contador, 
+                                mensaje.getRemitente().getNombre().replaceAll("[^a-zA-Z0-9]", ""),
+                                mensaje.getArchivoNombre() != null ? mensaje.getArchivoNombre() : "imagen.jpg");
+                            
+                            ZipEntry zipEntry = new ZipEntry(nombreArchivo);
+                            zos.putNextEntry(zipEntry);
+                            
+                            // Copiar contenido del archivo al ZIP
+                            Files.copy(archivoPath, zos);
+                            zos.closeEntry();
+                            contador++;
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error al procesar imagen: " + mensaje.getArchivoUrl() + " - " + e.getMessage());
+                        // Continuar con las demás imágenes
+                    }
+                }
+            }
+
+            zos.close();
+            
+            // Preparar respuesta
+            String nombreZip = String.format("Fotos_%s_%s.zip", 
+                grupo.getNombreViaje().replaceAll("[^a-zA-Z0-9]", "_"),
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", nombreZip);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(baos.toByteArray());
+
+        } catch (Exception e) {
+            System.err.println("Error al crear ZIP de fotos: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PostMapping("/{id}/expulsar")
