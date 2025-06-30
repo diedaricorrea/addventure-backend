@@ -10,6 +10,9 @@
     <!-- BLOQUE DE LINKS FRAGMENTS -->
     <th:block th:replace="~{fragments/head :: head-links}"></th:block>
 
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
@@ -56,6 +59,12 @@
                                 Punto de encuentro
                             </button>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="itinerary-tab" data-bs-toggle="tab"
+                                data-bs-target="#itinerary" type="button" role="tab">
+                                Itinerario
+                            </button>
+                        </li>
                     </ul>
 
                     <form th:action="@{/grupos/editar/{id}(id=${grupo.idGrupo})}" th:object="${datosViaje}" method="post"
@@ -75,25 +84,15 @@
                                         </div>
                                     </div>
 
-                                    <div class="row mb-3">
-                                        <div class="col-md-6 mb-3 mb-md-0">
-                                            <label for="destinoPrincipal" class="form-label fw-medium">
-                                                <i class="bi bi-geo-alt me-1"></i> Destino principal *
-                                            </label>
-                                            <input type="text" class="form-control" id="destinoPrincipal"
-                                                th:field="*{destinoPrincipal}" placeholder="Ej: Cusco, Perú" required>
-                                            <div class="invalid-feedback" th:if="${#fields.hasErrors('destinoPrincipal')}"
-                                                th:errors="*{destinoPrincipal}">
-                                                El destino principal es obligatorio.
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="idTipoViaje" class="form-label fw-medium">Tipo de viaje</label>
-                                            <select class="form-select" id="idTipoViaje" th:field="*{idTipoViaje}">
-                                                <option value="">Selecciona un tipo</option>
-                                                <option th:each="tipo : ${tiposViaje}" th:value="${tipo.idTipo}"
-                                                    th:text="${tipo.nombreTipo}"></option>
-                                            </select>
+                                    <div class="mb-3">
+                                        <label for="destinoPrincipal" class="form-label fw-medium">
+                                            <i class="bi bi-geo-alt me-1"></i> Destino principal *
+                                        </label>
+                                        <input type="text" class="form-control" id="destinoPrincipal"
+                                            th:field="*{destinoPrincipal}" placeholder="Ej: Cusco, Perú" required>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('destinoPrincipal')}"
+                                            th:errors="*{destinoPrincipal}">
+                                            El destino principal es obligatorio.
                                         </div>
                                     </div>
 
@@ -103,7 +102,9 @@
                                                 <i class="bi bi-calendar me-1"></i> Fecha de inicio *
                                             </label>
                                             <input type="date" class="form-control" id="fechaInicio"
-                                                th:field="*{fechaInicio}" required>
+                                                th:value="${datosViaje.fechaInicio}" required readonly>
+                                            <!-- Campo hidden para enviar la fecha en el formulario -->
+                                            <input type="hidden" th:field="*{fechaInicio}">
                                             <div class="invalid-feedback" th:if="${#fields.hasErrors('fechaInicio')}"
                                                 th:errors="*{fechaInicio}">
                                                 La fecha de inicio es obligatoria.
@@ -111,8 +112,10 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label for="fechaFin" class="form-label fw-medium">Fecha de fin *</label>
-                                            <input type="date" class="form-control" id="fechaFin" th:field="*{fechaFin}"
-                                                required>
+                                            <input type="date" class="form-control" id="fechaFin" th:value="*{fechaFin}"
+                                                required readonly>
+                                            <!-- Campo hidden para enviar la fecha en el formulario -->
+                                            <input type="hidden" th:field="*{fechaFin}">
                                             <div class="invalid-feedback" th:if="${#fields.hasErrors('fechaFin')}"
                                                 th:errors="*{fechaFin}">
                                                 La fecha de fin es obligatoria.
@@ -120,7 +123,42 @@
                                         </div>
                                     </div>
 
-
+                                    <div class="row mb-3">
+                                        <div class="col-md-6 mb-3 mb-md-0">
+                                            <label for="maxParticipantes" class="form-label fw-medium">
+                                                <i class="bi bi-people me-1"></i> Máximo participantes *
+                                            </label>
+                                            <select class="form-select" id="maxParticipantes" th:field="*{maxParticipantes}" required>
+                                                <option value="">Selecciona el número</option>
+                                                <option th:each="i : ${#numbers.sequence(2, 20)}" th:value="${i}" th:text="${i + ' personas'}"></option>
+                                            </select>
+                                            <div class="invalid-feedback" th:if="${#fields.hasErrors('maxParticipantes')}"
+                                                th:errors="*{maxParticipantes}">
+                                                El número de participantes es obligatorio.
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="rango-edad" class="form-label fw-medium">Rango de edad de los viajeros</label>
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <label for="rangoEdadMin" class="form-label small">Edad mínima</label>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" id="rangoEdadMin"
+                                                            th:field="*{rangoEdadMin}" min="18" max="80">
+                                                        <span class="input-group-text">años</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <label for="rangoEdadMax" class="form-label small">Edad máxima</label>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" id="rangoEdadMax"
+                                                            th:field="*{rangoEdadMax}" min="18" max="80">
+                                                        <span class="input-group-text">años</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     <div class="mb-3">
                                         <label for="descripcion" class="form-label fw-medium">Descripción del viaje
@@ -158,9 +196,17 @@
                                         <label for="imagenDestacada" class="form-label fw-medium">
                                             <i class="bi bi-upload me-1"></i> Imagen destacada (URL)
                                         </label>
-                                        <input type="text" class="form-control" id="imagenDestacada"
+                                        <input type="url" class="form-control" id="imagenDestacada"
                                             th:field="*{imagenDestacada}"
-                                            placeholder="Ingresa la URL de una imagen para tu grupo">
+                                            placeholder="https://ejemplo.com/imagen.jpg" pattern="https?://.+">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Opcional. Debe ser una URL válida que comience con http:// o https://
+                                        </small>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('imagenDestacada')}"
+                                            th:errors="*{imagenDestacada}">
+                                            La URL de la imagen no es válida.
+                                        </div>
                                     </div>
 
                                     <div class="d-flex justify-content-end">
@@ -196,6 +242,52 @@
                                         <button type="button" class="btn btn-outline-secondary" id="back-to-info-tab">
                                             <i class="bi bi-chevron-up me-1"></i> Anterior
                                         </button>
+                                        <button type="button" class="btn btn-primary" id="to-itinerary-tab">
+                                            Continuar <i class="bi bi-chevron-down ms-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab 3: Itinerario -->
+                            <div class="tab-pane fade" id="itinerary" role="tabpanel">
+                                <div class="slide-in">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="fw-medium">Itinerario del viaje</h5>
+                                        <span id="trip-days-badge" class="badge bg-primary">0 días de viaje</span>
+                                    </div>
+
+                                    <div id="itinerary-content">
+                                        <div id="no-dates-warning" class="alert alert-warning">
+                                            <p class="d-flex align-items-center mb-0">
+                                                <i class="bi bi-info-circle me-2"></i>
+                                                Selecciona las fechas de inicio y fin en la sección de información básica
+                                                para generar el itinerario.
+                                            </p>
+                                        </div>
+
+                                        <div id="itinerary-container" class="d-none">
+                                            <div class="alert alert-info mb-4">
+                                                <p class="small mb-0">
+                                                    Describe las actividades planeadas para cada día del viaje. Esto ayudará
+                                                    a los potenciales participantes a entender mejor la experiencia que
+                                                    vivirán.
+                                                </p>
+                                            </div>
+
+                                            <div class="accordion" id="itineraryAccordion">
+                                                <!-- Itinerary days will be populated by JavaScript -->
+                                            </div>
+
+                                                                        <!-- Campo oculto para el JSON del itinerario -->
+                            <input type="hidden" id="diasItinerarioJson" th:field="*{diasItinerarioJson}">
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between mt-4">
+                                        <button type="button" class="btn btn-outline-secondary" id="back-to-location-tab">
+                                            <i class="bi bi-chevron-up me-1"></i> Anterior
+                                        </button>
                                         <button type="submit" class="btn btn-primary">
                                             <i class="bi bi-check-lg me-1"></i> Guardar Cambios
                                         </button>
@@ -214,6 +306,9 @@
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <!-- Script para crear grupos (incluye manejo de etiquetas) -->
     <script th:src="@{/js/crear-grupo.js}"></script>
 
@@ -222,9 +317,12 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Navegación entre tabs
             const toLocationTab = document.getElementById('to-location-tab');
+            const toItineraryTab = document.getElementById('to-itinerary-tab');
             const backToInfoTab = document.getElementById('back-to-info-tab');
+            const backToLocationTab = document.getElementById('back-to-location-tab');
             const infoTab = document.getElementById('info-tab');
             const locationTab = document.getElementById('location-tab');
+            const itineraryTab = document.getElementById('itinerary-tab');
 
             if (toLocationTab) {
                 toLocationTab.addEventListener('click', function () {
@@ -232,9 +330,21 @@
                 });
             }
 
+            if (toItineraryTab) {
+                toItineraryTab.addEventListener('click', function () {
+                    itineraryTab.click();
+                });
+            }
+
             if (backToInfoTab) {
                 backToInfoTab.addEventListener('click', function () {
                     infoTab.click();
+                });
+            }
+
+            if (backToLocationTab) {
+                backToLocationTab.addEventListener('click', function () {
+                    locationTab.click();
                 });
             }
 

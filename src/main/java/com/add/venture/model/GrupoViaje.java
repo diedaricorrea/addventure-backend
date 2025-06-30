@@ -78,7 +78,7 @@ public class GrupoViaje {
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    @OneToMany(mappedBy = "grupo", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "grupo", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private Set<Itinerario> itinerarios;
 
@@ -99,4 +99,16 @@ public class GrupoViaje {
     @OneToMany(mappedBy = "grupo", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<Resena> resenas;
+    
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @OneToMany(mappedBy = "grupo", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private Set<UsuarioRolGrupo> rolesUsuarios;
+    
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @OneToMany(mappedBy = "grupo", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private Set<Notificacion> notificaciones;
 }

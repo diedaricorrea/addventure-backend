@@ -523,6 +523,53 @@
         </div>
     </div>
 
+    <!-- Delete Group Modal -->
+    <div class="modal fade" id="deleteGroupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Eliminar grupo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Estás a punto de eliminar el grupo <strong th:text="${grupo.nombreViaje}">Nombre del Grupo</strong>.</p>
+                    
+                    <div class="alert alert-danger d-flex align-items-start mb-3">
+                        <i class="bi bi-exclamation-triangle me-2 mt-1"></i>
+                        <div>
+                            <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                            <ul class="mb-0 mt-2">
+                                <li>Se eliminará toda la información del grupo</li>
+                                <li>Se perderá el historial del chat</li>
+                                <li>Los participantes serán notificados</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div id="deleteGroupInfo" class="alert alert-info d-none">
+                        <!-- Información sobre las reglas de eliminación -->
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="deleteConfirmText" class="form-label">
+                            Para confirmar, escribe "<strong>ELIMINAR</strong>" en el siguiente campo:
+                        </label>
+                        <input type="text" class="form-control" id="deleteConfirmText" 
+                               placeholder="Escribe ELIMINAR">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn" disabled>
+                        <i class="bi bi-trash me-2"></i>Eliminar grupo permanentemente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Assign Role Modal -->
     <div class="modal fade" id="assignRoleModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
@@ -1092,6 +1139,97 @@
                     }
                     document.getElementById('assignRoleForm').submit();
                 });
+            }
+
+            // Manejo del modal de eliminar grupo
+            const deleteGroupModal = document.getElementById('deleteGroupModal');
+            const deleteConfirmText = document.getElementById('deleteConfirmText');
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            
+            if (deleteGroupModal && deleteConfirmText && confirmDeleteBtn) {
+                // Validar texto de confirmación
+                deleteConfirmText.addEventListener('input', function() {
+                    const isValid = this.value.trim().toUpperCase() === 'ELIMINAR';
+                    confirmDeleteBtn.disabled = !isValid;
+                    
+                    if (isValid) {
+                        confirmDeleteBtn.classList.remove('btn-danger');
+                        confirmDeleteBtn.classList.add('btn-danger');
+                    }
+                });
+
+                // Limpiar modal al cerrarse
+                deleteGroupModal.addEventListener('hidden.bs.modal', function() {
+                    deleteConfirmText.value = '';
+                    confirmDeleteBtn.disabled = true;
+                    document.getElementById('deleteGroupInfo').classList.add('d-none');
+                });
+
+                // Confirmar eliminación
+                confirmDeleteBtn.addEventListener('click', function() {
+                    if (deleteConfirmText.value.trim().toUpperCase() !== 'ELIMINAR') {
+                        alert('Debes escribir "ELIMINAR" para confirmar');
+                        return;
+                    }
+
+                    // Deshabilitar botón y mostrar loading
+                    confirmDeleteBtn.disabled = true;
+                    confirmDeleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Eliminando...';
+
+                    // Realizar petición de eliminación
+                    fetch(`/grupos/${grupoId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Éxito - redirigir
+                            alert(data.mensaje || 'Grupo eliminado exitosamente');
+                            window.location.href = '/grupos/mis-viajes';
+                        } else if (data.requiereVotacion) {
+                            // Requiere votación
+                            showVotationInfo(data);
+                        } else {
+                            // Error
+                            alert(data.error || 'Error al eliminar el grupo');
+                            resetDeleteButton();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error de conexión al eliminar el grupo');
+                        resetDeleteButton();
+                    });
+                });
+
+                function resetDeleteButton() {
+                    confirmDeleteBtn.disabled = false;
+                    confirmDeleteBtn.innerHTML = '<i class="bi bi-trash me-2"></i>Eliminar grupo permanentemente';
+                }
+
+                function showVotationInfo(data) {
+                    const infoDiv = document.getElementById('deleteGroupInfo');
+                    infoDiv.className = 'alert alert-warning';
+                    infoDiv.innerHTML = `
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-exclamation-triangle me-2 mt-1"></i>
+                            <div>
+                                <strong>Se requiere votación para eliminar el grupo</strong>
+                                <p class="mb-2 mt-2">${data.razon}</p>
+                                <ul class="mb-2">
+                                    <li>Participantes en el grupo: ${data.totalParticipantes}</li>
+                                    <li>Votos necesarios (70%): ${Math.ceil(data.votosMinimosnecesarios)}</li>
+                                </ul>
+                                <p class="mb-0"><strong>Próximamente:</strong> ${data.solucion}</p>
+                            </div>
+                        </div>
+                    `;
+                    infoDiv.classList.remove('d-none');
+                    resetDeleteButton();
+                }
             }
         }
 

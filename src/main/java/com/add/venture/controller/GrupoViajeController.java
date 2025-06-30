@@ -3,6 +3,8 @@ package com.add.venture.controller;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,17 +31,21 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.add.venture.dto.CrearGrupoViajeDTO;
+import com.add.venture.dto.DiaItinerarioDTO;
 import com.add.venture.helper.UsuarioAutenticadoHelper;
 import com.add.venture.model.GrupoViaje;
 import com.add.venture.model.MensajeGrupo;
+import com.add.venture.model.Notificacion;
 import com.add.venture.model.ParticipanteGrupo;
 import com.add.venture.model.ParticipanteGrupo.EstadoSolicitud;
 import com.add.venture.model.Usuario;
 import com.add.venture.model.Viaje;
 import com.add.venture.repository.GrupoViajeRepository;
 import com.add.venture.repository.MensajeGrupoRepository;
+import com.add.venture.repository.NotificacionRepository;
 import com.add.venture.repository.ParticipanteGrupoRepository;
 import com.add.venture.repository.UsuarioRepository;
+import com.add.venture.repository.UsuarioRolGrupoRepository;
 import com.add.venture.repository.ViajeRepository;
 import com.add.venture.service.IGrupoViajeService;
 import com.add.venture.service.INotificacionService;
@@ -77,6 +83,12 @@ public class GrupoViajeController {
 
     @Autowired
     private IPermisosService permisosService;
+
+    @Autowired
+    private UsuarioRolGrupoRepository usuarioRolGrupoRepository;
+
+    @Autowired
+    private NotificacionRepository notificacionRepository;
 
     @GetMapping
     public String listarGrupos(
@@ -642,17 +654,28 @@ public class GrupoViajeController {
         // Obtener el grupo
         GrupoViaje grupo = grupoViajeService.buscarGrupoPorId(idGrupo);
 
-        // Verificar permisos
+        // Verificar permisos usando el sistema de permisos
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        if (!grupo.getCreador().getIdUsuario().equals(usuario.getIdUsuario())) {
+        
+        if (!permisosService.usuarioTienePermiso(usuario, grupo, "EDITAR_GRUPO")) {
             throw new AccessDeniedException("No tienes permiso para editar este grupo");
         }
 
-        // Convertir entidad a DTO
+        // Verificar si han pasado más de 24 horas desde la creación
+        LocalDateTime ahora = LocalDateTime.now();
+        Duration tiempoDesdeCreacion = Duration.between(grupo.getFechaCreacion(), ahora);
+        if (tiempoDesdeCreacion.toHours() >= 24) {
+            throw new AccessDeniedException("No se puede editar el grupo después de 24 horas de su creación. " +
+                    "Han transcurrido " + tiempoDesdeCreacion.toHours() + " horas. " +
+                    "Para hacer cambios importantes, puedes usar el chat del grupo o eliminar y recrear el grupo.");
+        }
+
+        // Convertir entidad a DTO completo
         CrearGrupoViajeDTO dto = new CrearGrupoViajeDTO();
         dto.setNombreViaje(grupo.getNombreViaje());
+        dto.setMaxParticipantes(grupo.getMaxParticipantes());
         
         if (grupo.getViaje() != null) {
             dto.setDestinoPrincipal(grupo.getViaje().getDestinoPrincipal());
@@ -668,15 +691,42 @@ public class GrupoViajeController {
             }
         }
 
-        if (grupo.getEtiquetas() != null) {
+        // Cargar etiquetas
+        if (grupo.getEtiquetas() != null && !grupo.getEtiquetas().isEmpty()) {
             dto.setEtiquetas(grupo.getEtiquetas().stream()
                     .map(etiqueta -> etiqueta.getNombreEtiqueta())
                     .collect(Collectors.toList()));
         }
 
+        // Cargar itinerarios si existen
+        if (grupo.getItinerarios() != null && !grupo.getItinerarios().isEmpty()) {
+            List<DiaItinerarioDTO> diasItinerario = grupo.getItinerarios().stream()
+                .sorted((i1, i2) -> Integer.compare(i1.getDiaNumero(), i2.getDiaNumero()))
+                .map(itinerario -> {
+                    DiaItinerarioDTO diaDTO = new DiaItinerarioDTO();
+                    diaDTO.setDiaNumero(itinerario.getDiaNumero());
+                    diaDTO.setTitulo(itinerario.getTitulo());
+                    diaDTO.setDescripcion(itinerario.getDescripcion());
+                    diaDTO.setPuntoPartida(itinerario.getPuntoPartida());
+                    diaDTO.setPuntoLlegada(itinerario.getPuntoLlegada());
+                    diaDTO.setDuracionEstimada(itinerario.getDuracionEstimada());
+                    return diaDTO;
+                })
+                .collect(Collectors.toList());
+            dto.setDiasItinerario(diasItinerario);
+            
+            // Convertir a JSON para el campo oculto
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                String itinerarioJson = objectMapper.writeValueAsString(diasItinerario);
+                dto.setDiasItinerarioJson(itinerarioJson);
+            } catch (Exception e) {
+                System.err.println("Error al convertir itinerario a JSON: " + e.getMessage());
+            }
+        }
+
         model.addAttribute("datosViaje", dto);
         model.addAttribute("grupo", grupo); // Necesario para el ID en el formulario
-        model.addAttribute("tiposViaje", grupoViajeService.obtenerTiposViaje());
 
         return "grupos/editar-grupo";
     }
@@ -692,25 +742,42 @@ public class GrupoViajeController {
             // Recargar datos necesarios en caso de error
             usuarioAutenticadoHelper.cargarDatosUsuarioParaNavbar(model);
             usuarioAutenticadoHelper.cargarUsuarioParaPerfil(model);
-            model.addAttribute("tiposViaje", grupoViajeService.obtenerTiposViaje());
             return "grupos/editar-grupo";
         }
 
         try {
+            // Verificar permisos y tiempo antes de actualizar
+            GrupoViaje grupo = grupoViajeService.buscarGrupoPorId(idGrupo);
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
+            // Verificar permisos
+            if (!permisosService.usuarioTienePermiso(usuario, grupo, "EDITAR_GRUPO")) {
+                throw new AccessDeniedException("No tienes permiso para editar este grupo");
+            }
+
+            // Verificar tiempo límite (24 horas)
+            LocalDateTime ahora = LocalDateTime.now();
+            Duration tiempoDesdeCreacion = Duration.between(grupo.getFechaCreacion(), ahora);
+            if (tiempoDesdeCreacion.toHours() >= 24) {
+                throw new AccessDeniedException("No se puede editar el grupo después de 24 horas de su creación. " +
+                        "Han transcurrido " + tiempoDesdeCreacion.toHours() + " horas.");
+            }
+
             // Actualizar el grupo usando el servicio
             grupoViajeService.actualizarGrupoViaje(idGrupo, dto);
             redirectAttributes.addFlashAttribute("mensaje", "Grupo actualizado exitosamente");
             redirectAttributes.addFlashAttribute("tipoMensaje", "success");
             return "redirect:/grupos/mis-viajes";
         } catch (AccessDeniedException e) {
-            redirectAttributes.addFlashAttribute("mensaje", "No tienes permiso para editar este grupo");
+            redirectAttributes.addFlashAttribute("mensaje", e.getMessage());
             redirectAttributes.addFlashAttribute("tipoMensaje", "danger");
             return "redirect:/grupos/mis-viajes";
         } catch (Exception e) {
             model.addAttribute("error", "Error al actualizar el grupo: " + e.getMessage());
             usuarioAutenticadoHelper.cargarDatosUsuarioParaNavbar(model);
             usuarioAutenticadoHelper.cargarUsuarioParaPerfil(model);
-            model.addAttribute("tiposViaje", grupoViajeService.obtenerTiposViaje());
             return "grupos/editar-grupo";
         }
     }
@@ -721,7 +788,8 @@ public class GrupoViajeController {
         // Obtener el usuario autenticado
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "Usuario no autenticado"));
         }
 
         String email = auth.getName();
@@ -732,23 +800,140 @@ public class GrupoViajeController {
         GrupoViaje grupo = grupoViajeRepository.findById(idGrupo)
                 .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
 
-        // Verificar que el usuario autenticado sea el creador del grupo
-        if (!grupo.getCreador().equals(usuario)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo el creador puede eliminar el grupo");
+        // Verificar que el usuario tenga permisos para eliminar
+        if (!permisosService.usuarioTienePermiso(usuario, grupo, "ELIMINAR_GRUPO")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "No tienes permiso para eliminar este grupo"));
         }
 
         try {
-            // Eliminar el grupo y su viaje asociado
-            Viaje viaje = grupo.getViaje();
-            if (viaje != null) {
-                viajeRepository.delete(viaje);
-            }
-            grupoViajeRepository.delete(grupo);
-            return ResponseEntity.ok().build();
+            return evaluarEliminacionGrupo(grupo, usuario);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al eliminar el grupo: " + e.getMessage());
+                    .body(Map.of("error", "Error al eliminar el grupo: " + e.getMessage()));
         }
+    }
+
+    private ResponseEntity<?> evaluarEliminacionGrupo(GrupoViaje grupo, Usuario solicitante) {
+        // Obtener participantes aceptados (excluyendo al creador)
+        List<ParticipanteGrupo> participantesAceptados = participanteGrupoRepository
+            .findByGrupoAndEstadoSolicitud(grupo, EstadoSolicitud.ACEPTADO);
+        
+        // Obtener también participantes pendientes para información completa
+        List<ParticipanteGrupo> participantesPendientes = participanteGrupoRepository
+            .findByGrupoAndEstadoSolicitud(grupo, EstadoSolicitud.PENDIENTE);
+        
+        // Calcular tiempo desde creación
+        LocalDateTime ahora = LocalDateTime.now();
+        Duration tiempoDesdeCreacion = Duration.between(grupo.getFechaCreacion(), ahora);
+        boolean esMenorA24Horas = tiempoDesdeCreacion.toHours() < 24;
+        
+        // REGLA 1: Si no hay participantes aceptados, se puede eliminar siempre
+        if (participantesAceptados.isEmpty()) {
+            eliminarGrupoDirectamente(grupo);
+            String mensaje = participantesPendientes.isEmpty() ? 
+                "Grupo eliminado (sin participantes)" :
+                "Grupo eliminado (solo había solicitudes pendientes)";
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "mensaje", mensaje
+            ));
+        }
+        
+        // REGLA 2: Si han pasado menos de 24 horas, el creador puede eliminar 
+        // el grupo notificando a todos los participantes
+        if (esMenorA24Horas) {
+            eliminarGrupoDirectamente(grupo);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "mensaje", "Grupo eliminado exitosamente. Los participantes han sido notificados.",
+                "participantesNotificados", participantesAceptados.size() + participantesPendientes.size()
+            ));
+        }
+        
+        // REGLA 3: Si han pasado más de 24 horas Y hay participantes aceptados,
+        // se requiere votación (por implementar) o justificación especial
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(Map.of(
+                "error", "No se puede eliminar el grupo automáticamente",
+                "razon", "Han pasado más de 24 horas desde la creación y hay " + participantesAceptados.size() + " participantes activos",
+                "solucion", "Contacta al soporte de AddVenture para solicitudes de eliminación especiales",
+                "tiempoTranscurrido", String.format("%.1f horas", (double) tiempoDesdeCreacion.toMinutes() / 60.0),
+                "participantesActivos", participantesAceptados.size(),
+                "participantesPendientes", participantesPendientes.size(),
+                "contactoSoporte", "support@addventure.com"
+            ));
+    }
+
+    private void notificarEliminacionGrupo(GrupoViaje grupo) {
+        // Obtener todos los participantes del grupo (de todos los estados)
+        List<ParticipanteGrupo> participantesAceptados = participanteGrupoRepository
+                .findByGrupoAndEstadoSolicitud(grupo, EstadoSolicitud.ACEPTADO);
+        List<ParticipanteGrupo> participantesPendientes = participanteGrupoRepository
+                .findByGrupoAndEstadoSolicitud(grupo, EstadoSolicitud.PENDIENTE);
+        
+        // Notificar a participantes aceptados
+        for (ParticipanteGrupo participante : participantesAceptados) {
+            try {
+                crearNotificacionEliminacionGrupo(participante.getUsuario(), grupo, "GRUPO_ELIMINADO");
+            } catch (Exception e) {
+                System.err.println("Error al enviar notificación de eliminación a " + 
+                                 participante.getUsuario().getEmail() + ": " + e.getMessage());
+            }
+        }
+        
+        // Notificar a participantes con solicitudes pendientes
+        for (ParticipanteGrupo participante : participantesPendientes) {
+            try {
+                crearNotificacionEliminacionGrupo(participante.getUsuario(), grupo, "SOLICITUD_CANCELADA");
+            } catch (Exception e) {
+                System.err.println("Error al enviar notificación de cancelación a " + 
+                                 participante.getUsuario().getEmail() + ": " + e.getMessage());
+            }
+        }
+    }
+    
+    private void crearNotificacionEliminacionGrupo(Usuario usuario, GrupoViaje grupo, String tipo) {
+        String contenido;
+        if ("GRUPO_ELIMINADO".equals(tipo)) {
+            contenido = "El grupo '" + grupo.getNombreViaje() + "' ha sido eliminado por el creador. " +
+                       "Ya no tienes acceso al chat ni a la información del grupo.";
+        } else {
+            contenido = "Tu solicitud para unirte al grupo '" + grupo.getNombreViaje() + "' ha sido cancelada " +
+                       "porque el grupo fue eliminado por el creador.";
+        }
+        
+        // Crear la notificación directamente usando el repository
+        Notificacion notificacion = Notificacion.builder()
+                .tipo(tipo)
+                .contenido(contenido)
+                .usuario(usuario)
+                .grupo(grupo)
+                .leido(false)
+                .estado("activo")
+                .build();
+                
+        notificacionRepository.save(notificacion);
+    }
+
+    private void eliminarGrupoDirectamente(GrupoViaje grupo) {
+        // 1. Notificar a todos los participantes sobre la eliminación
+        notificarEliminacionGrupo(grupo);
+        
+        // 2. Eliminar notificaciones asociadas al grupo
+        notificacionRepository.deleteAll(notificacionRepository.findByGrupo(grupo));
+        
+        // 3. Eliminar roles de usuarios asociados al grupo
+        usuarioRolGrupoRepository.deleteAll(usuarioRolGrupoRepository.findByGrupo(grupo));
+        
+        // 4. Eliminar el viaje asociado
+        Viaje viaje = grupo.getViaje();
+        if (viaje != null) {
+            viajeRepository.delete(viaje);
+        }
+        
+        // 5. Eliminar el grupo (las otras relaciones se eliminan por cascade)
+        grupoViajeRepository.delete(grupo);
     }
 
 }

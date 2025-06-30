@@ -306,14 +306,40 @@ document.addEventListener('DOMContentLoaded', function() {
             const itinerarioExistente = JSON.parse(diasItinerarioJson.value);
             if (Array.isArray(itinerarioExistente)) {
                 itineraryData = itinerarioExistente;
-                updateItinerary();
             }
         } catch (e) {
             console.error('Error al cargar itinerario existente:', e);
         }
     }
     
+    // En modo edición, llamar updateItinerary automáticamente para inicializar la vista
+    if (isEditMode) {
+        // Esperar un poco para que el DOM esté completamente cargado
+        setTimeout(() => {
+            updateItinerary();
+        }, 100);
+    }
+    
     function updateItinerary() {
+        // En modo edición, si hay datos de itinerario precargados, mostrarlos aunque las fechas sean null
+        if (isEditMode && itineraryData.length > 0 && (!fechaInicio.value || !fechaFin.value)) {
+            
+            if (tripDaysBadge) {
+                tripDaysBadge.textContent = `${itineraryData.length} días de viaje`;
+            }
+            
+            if (noDatesWarning) {
+                noDatesWarning.classList.add('d-none');
+            }
+            if (itineraryContainer) {
+                itineraryContainer.classList.remove('d-none');
+            }
+            
+            // Mostrar el itinerario existente sin fechas específicas
+            recreateItineraryUI(itineraryData.length, new Date());
+            return;
+        }
+        
         if (fechaInicio && fechaFin && fechaInicio.value && fechaFin.value) {
             const start = new Date(fechaInicio.value);
             const end = new Date(fechaFin.value);

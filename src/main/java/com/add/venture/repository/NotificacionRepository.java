@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.add.venture.model.GrupoViaje;
 import com.add.venture.model.Notificacion;
 import com.add.venture.model.Usuario;
 
@@ -43,4 +44,12 @@ public interface NotificacionRepository extends JpaRepository<Notificacion, Long
      * @return lista de notificaciones del tipo especificado
      */
     List<Notificacion> findByTipoAndUsuario(String tipo, Usuario usuario);
+    
+    /**
+     * Busca todas las notificaciones asociadas a un grupo
+     * 
+     * @param grupo el grupo cuyas notificaciones se buscan
+     * @return lista de notificaciones del grupo
+     */
+    List<Notificacion> findByGrupo(GrupoViaje grupo);
 } 
