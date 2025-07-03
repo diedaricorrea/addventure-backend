@@ -12,6 +12,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,6 +30,7 @@ import com.add.venture.model.Viaje;
 import com.add.venture.model.ParticipanteGrupo.EstadoSolicitud;
 import com.add.venture.repository.EtiquetaRepository;
 import com.add.venture.repository.GrupoViajeRepository;
+import com.add.venture.repository.ItinerarioRepository;
 import com.add.venture.repository.TipoViajeRepository;
 import com.add.venture.repository.UsuarioRepository;
 import com.add.venture.repository.ViajeRepository;
@@ -48,6 +52,15 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
 
     @Autowired
     private EtiquetaRepository etiquetaRepository;
+
+    @Autowired
+    private ItinerarioRepository itinerarioRepository;
+
+    @Autowired
+    private IPermisosService permisosService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -87,7 +100,6 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
         // Crear el grupo de viaje
         GrupoViaje grupo = new GrupoViaje();
         grupo.setNombreViaje(dto.getNombreViaje());
-        grupo.setTipoGrupo(dto.getTipoGrupo());
         grupo.setFechaCreacion(LocalDateTime.now());
         grupo.setEstado("activo");
         grupo.setMaxParticipantes(dto.getMaxParticipantes());
@@ -116,19 +128,9 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
             grupo.setEtiquetas(etiquetas);
         }
 
-        // Añadir al creador como participante
-        ParticipanteGrupo participante = new ParticipanteGrupo();
-        participante.setUsuario(creador);
-        participante.setGrupo(grupo);
-        participante.setRolParticipante("CREADOR");
-        participante.setEstadoSolicitud(EstadoSolicitud.ACEPTADO);
-        participante.setFechaUnion(LocalDateTime.now());
+        // NO agregamos al creador como participante porque ya es el creador
+        // El creador se cuenta por separado en las validaciones
 
-        // Inicializar conjuntos si son nulos
-        if (grupo.getParticipantes() == null) {
-            grupo.setParticipantes(new HashSet<>());
-        }
-        grupo.getParticipantes().add(participante);
         // Procesar itinerario desde JSON si existe
         if (dto.getDiasItinerarioJson() != null && !dto.getDiasItinerarioJson().isEmpty()) {
             try {
@@ -160,7 +162,17 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
         }
 
         // Guardar el grupo final sin volver a establecer la relación con el viaje
-        return grupoViajeRepository.save(grupo);
+        grupo = grupoViajeRepository.save(grupo);
+        
+        // Asignar automáticamente el rol de líder al creador del grupo
+        try {
+            permisosService.asignarRolLiderCreador(creador, grupo);
+        } catch (Exception e) {
+            // Log del error pero no fallar la creación del grupo
+            System.err.println("Error al asignar rol de líder: " + e.getMessage());
+        }
+        
+        return grupo;
     }
 
     @Override
@@ -179,7 +191,6 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
             LocalDate fechaInicio,
             LocalDate fechaFin,
             Long idTipoViaje,
-            String tipoGrupo,
             String rangoEdad,
             Boolean verificado,
             List<String> etiquetas,
@@ -200,6 +211,7 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
     }
 
     @Override
+    @Transactional
     public GrupoViaje actualizarGrupoViaje(Long idGrupo, CrearGrupoViajeDTO dto) {
         // Buscar el grupo por id
         GrupoViaje grupo = grupoViajeRepository.findById(idGrupo)
@@ -210,6 +222,8 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
         if (viaje == null) {
             throw new RuntimeException("Viaje asociado no encontrado");
         }
+
+
 
         // Actualizar campos del viaje
         viaje.setDestinoPrincipal(dto.getDestinoPrincipal());
@@ -222,20 +236,11 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
         viaje.setRangoEdadMax(dto.getRangoEdadMax());
         // No se actualiza fechaCreacion ni estado, salvo que quieras hacerlo
 
-        // Actualizar tipo de viaje si se especificó
-        if (dto.getIdTipoViaje() != null) {
-            TipoViaje tipoViaje = tipoViajeRepository.findById(dto.getIdTipoViaje())
-                    .orElseThrow(() -> new RuntimeException("Tipo de viaje no encontrado"));
-            viaje.setTipo(tipoViaje);
-        } else {
-            viaje.setTipo(null);
-        }
-
-        viajeRepository.save(viaje);
+        viaje = viajeRepository.save(viaje);
 
         // Actualizar campos del grupo
         grupo.setNombreViaje(dto.getNombreViaje());
-        grupo.setTipoGrupo(dto.getTipoGrupo());
+        grupo.setMaxParticipantes(dto.getMaxParticipantes());
         // No se actualiza fechaCreacion ni estado salvo que quieras hacerlo
 
         // Actualizar etiquetas
@@ -268,13 +273,22 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
             }
         }
 
+        // Actualizar itinerarios
         if (dto.getDiasItinerario() != null) {
-            // Limpiar itinerarios actuales antes de agregar nuevos
+            // Primero eliminar todos los itinerarios existentes
+            itinerarioRepository.deleteByGrupo(grupo);
+            
+            // Limpiar la colección en memoria para sincronizar con la BD
             if (grupo.getItinerarios() != null) {
                 grupo.getItinerarios().clear();
             } else {
                 grupo.setItinerarios(new HashSet<>());
             }
+            
+            // Forzar el flush para que la eliminación se ejecute inmediatamente
+            entityManager.flush();
+            
+            // Ahora crear los nuevos itinerarios
             for (DiaItinerarioDTO diaDTO : dto.getDiasItinerario()) {
                 Itinerario itinerario = new Itinerario();
                 itinerario.setDiaNumero(diaDTO.getDiaNumero());

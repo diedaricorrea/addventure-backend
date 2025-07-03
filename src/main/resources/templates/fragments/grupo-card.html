@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <!-- Fragmento para tarjeta de grupo -->
+    <div th:fragment="grupo-card(grupo, esCreador)" class="card h-100 border-light hover-shadow">
+        <div class="position-relative">
+            <img th:if="${grupo.viaje != null && grupo.viaje.imagenDestacada != null && !grupo.viaje.imagenDestacada.trim().isEmpty()}"
+                th:src="${grupo.viaje.imagenDestacada}" class="card-img-top" alt="Imagen del viaje"
+                style="height: 200px; object-fit: cover;">
+            <div th:unless="${grupo.viaje != null && grupo.viaje.imagenDestacada != null && !grupo.viaje.imagenDestacada.trim().isEmpty()}"
+                class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                style="height: 200px;">
+                <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+            </div>
+            
+            <span class="badge bg-primary position-absolute top-0 start-0 m-2"
+                th:if="${grupo.viaje != null && grupo.viaje.destinoPrincipal != null}">
+                <i class="bi bi-geo-alt me-1"></i>
+                <span th:text="${grupo.viaje.destinoPrincipal}">Destino</span>
+            </span>
+            
+            <span class="badge bg-success position-absolute top-0 end-0 m-2"
+                th:if="${grupo.viaje != null && grupo.viaje.esVerificado}">
+                <i class="bi bi-check-circle me-1"></i>Verificado
+            </span>
+            
+            <!-- Badge de rol -->
+            <span class="badge position-absolute bottom-0 end-0 m-2"
+                th:classappend="${esCreador} ? 'bg-warning text-dark' : 'bg-info'">
+                <i th:class="${esCreador} ? 'bi bi-star-fill me-1' : 'bi bi-person-check me-1'"></i>
+                <span th:text="${esCreador} ? 'Organizador' : 'Participante'">Rol</span>
+            </span>
+        </div>
+        
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="card-title fw-bold" th:text="${grupo.nombreViaje}">Nombre del Viaje</h5>
+                <span class="badge bg-light text-dark"
+                    th:if="${grupo.viaje != null && grupo.viaje.tipo != null}"
+                    th:text="${grupo.viaje.tipo.nombreTipo}">TIPO</span>
+            </div>
+
+            <div class="d-flex align-items-center text-muted mb-2" th:if="${grupo.viaje != null}">
+                <i class="bi bi-calendar me-2 text-primary"></i>
+                <small>
+                    <span class="fw-medium">Inicio:</span>
+                    <span th:text="${#temporals.format(grupo.viaje.fechaInicio, 'dd MMM yyyy')}">Fecha Inicio</span> •
+                    <span class="fw-medium">Fin:</span>
+                    <span th:text="${#temporals.format(grupo.viaje.fechaFin, 'dd MMM yyyy')}">Fecha Fin</span>
+                </small>
+            </div>
+
+            <div class="d-flex align-items-center text-muted mb-2">
+                <i class="bi bi-people me-2 text-primary"></i>
+                <small>
+                    <span class="fw-medium">Participantes:</span>
+                    <span th:text="${grupo.participantes != null ? grupo.participantes.size() + 1 : 1}">1</span> de 
+                    <span th:text="${grupo.maxParticipantes}">8</span> •
+                    <span class="fw-medium">Edad:</span>
+                    <span th:if="${grupo.viaje != null}">
+                        <span th:text="${grupo.viaje.rangoEdadMin != null ? grupo.viaje.rangoEdadMin : '18'}">18</span>-
+                        <span th:text="${grupo.viaje.rangoEdadMax != null ? grupo.viaje.rangoEdadMax : '60'}">60</span>
+                    </span>
+                    <span th:unless="${grupo.viaje != null}">Todas las edades</span>
+                </small>
+            </div>
+
+            <p class="card-text text-muted small mb-3" th:if="${grupo.viaje != null}"
+                th:text="${#strings.abbreviate(grupo.viaje.descripcion, 100)}">
+                Descripción del viaje...
+            </p>
+
+            <!-- Etiquetas -->
+            <div class="d-flex flex-wrap gap-1 mb-3"
+                th:if="${grupo.etiquetas != null && !grupo.etiquetas.isEmpty()}">
+                <span class="badge bg-light text-dark" th:each="etiqueta : ${grupo.etiquetas}"
+                    th:text="${etiqueta.nombreEtiqueta}">Etiqueta</span>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="d-flex justify-content-between align-items-center mt-auto">
+                <!-- Botones para creador cuando el grupo está activo -->
+                <div class="btn-group" th:if="${esCreador and grupo.estado == 'activo'}">
+                    <a th:href="@{/grupos/{id}(id=${grupo.idGrupo})}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i>Ver
+                    </a>
+                    <a th:href="@{/grupos/editar/{id}(id=${grupo.idGrupo})}" class="btn btn-outline-warning btn-sm">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </a>
+                    <button type="button" class="btn btn-outline-danger btn-sm" 
+                            th:data-grupo-id="${grupo.idGrupo}"
+                            onclick="confirmarEliminacion(this.getAttribute('data-grupo-id'))">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                    </button>
+                </div>
+                
+                <!-- Botones para creador cuando el grupo está cerrado/concluido -->
+                <div class="btn-group" th:if="${esCreador and (grupo.estado == 'cerrado' or grupo.estado == 'concluido')}">
+                    <a th:href="@{/grupos/{id}(id=${grupo.idGrupo})}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i>Ver
+                    </a>
+                    <a th:href="@{/calificaciones/grupo/{id}(id=${grupo.idGrupo})}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-star me-1"></i>Calificar
+                    </a>
+                </div>
+                
+                <!-- Botones para participante cuando el grupo está activo -->
+                <div class="btn-group" th:if="${!esCreador and grupo.estado == 'activo'}">
+                    <a th:href="@{/grupos/{id}(id=${grupo.idGrupo})}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i>Ver Detalles
+                    </a>
+                    <button type="button" class="btn btn-outline-danger btn-sm"
+                            th:data-grupo-id="${grupo.idGrupo}"
+                            onclick="confirmarAbandonar(this.getAttribute('data-grupo-id'))">
+                        <i class="bi bi-box-arrow-right me-1"></i>Abandonar
+                    </button>
+                </div>
+                
+                <!-- Botones para participante cuando el grupo está cerrado/concluido -->
+                <div class="btn-group" th:if="${!esCreador and (grupo.estado == 'cerrado' or grupo.estado == 'concluido')}">
+                    <a th:href="@{/grupos/{id}(id=${grupo.idGrupo})}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i>Ver Detalles
+                    </a>
+                    <a th:href="@{/calificaciones/grupo/{id}(id=${grupo.idGrupo})}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-star me-1"></i>Calificar
+                    </a>
+                </div>
+                
+                <!-- Badge de estado -->
+                <div>
+                    <span class="badge bg-success" th:if="${grupo.estado == 'activo'}">
+                        <i class="bi bi-circle-fill me-1"></i>Activo
+                    </span>
+                    <span class="badge bg-secondary" th:if="${grupo.estado == 'cerrado' or grupo.estado == 'concluido'}">
+                        <i class="bi bi-check-circle me-1"></i>Finalizado
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html> 

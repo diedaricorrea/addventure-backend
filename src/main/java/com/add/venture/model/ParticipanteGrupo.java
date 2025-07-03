@@ -2,6 +2,8 @@ package com.add.venture.model;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -28,11 +30,13 @@ public class ParticipanteGrupo {
     @Id
     @ManyToOne
     @JoinColumn(name = "id_usuario")
+    @JsonIgnoreProperties({"gruposCreados", "etiquetas", "logros", "contrasenaHash"})
     private Usuario usuario;
 
     @Id
     @ManyToOne
     @JoinColumn(name = "id_grupo")
+    @JsonIgnoreProperties({"creador", "viaje", "etiquetas", "itinerarios", "participantes", "mensajes", "resenas"})
     private GrupoViaje grupo;
 
     @Column(name = "rol_participante", length = 30)
@@ -44,6 +48,10 @@ public class ParticipanteGrupo {
 
     @Column(name = "fecha_union")
     private LocalDateTime fechaUnion;
+    
+    @Column(name = "intentos_solicitud")
+    @Builder.Default
+    private Integer intentosSolicitud = 1;
 
     public enum EstadoSolicitud {
         PENDIENTE, ACEPTADO, RECHAZADO
