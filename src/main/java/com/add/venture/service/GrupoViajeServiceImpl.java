@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -224,8 +226,6 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
             throw new RuntimeException("Viaje asociado no encontrado");
         }
 
-
-
         // Actualizar campos del viaje
         viaje.setDestinoPrincipal(dto.getDestinoPrincipal());
         viaje.setFechaInicio(dto.getFechaInicio());
@@ -261,7 +261,7 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
             grupo.setEtiquetas(new HashSet<>());
         }
 
-        // Actualizar itinerarios
+        // Procesar itinerario desde JSON si existe
         if (dto.getDiasItinerarioJson() != null && !dto.getDiasItinerarioJson().isEmpty()) {
             try {
                 List<DiaItinerarioDTO> diasItinerario = objectMapper.readValue(
@@ -274,37 +274,70 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
             }
         }
 
-        // Actualizar itinerarios
+        // Actualizar itinerarios de forma inteligente
         if (dto.getDiasItinerario() != null) {
-            // Primero eliminar todos los itinerarios existentes
-            itinerarioRepository.deleteByGrupo(grupo);
-            
-            // Limpiar la colección en memoria para sincronizar con la BD
-            if (grupo.getItinerarios() != null) {
-                grupo.getItinerarios().clear();
-            } else {
-                grupo.setItinerarios(new LinkedHashSet<>());
-            }
-            
-            // Forzar el flush para que la eliminación se ejecute inmediatamente
-            entityManager.flush();
-            
-            // Ahora crear los nuevos itinerarios
-            for (DiaItinerarioDTO diaDTO : dto.getDiasItinerario()) {
-                Itinerario itinerario = new Itinerario();
-                itinerario.setDiaNumero(diaDTO.getDiaNumero());
-                itinerario.setTitulo(diaDTO.getTitulo());
-                itinerario.setDescripcion(diaDTO.getDescripcion());
-                itinerario.setPuntoPartida(diaDTO.getPuntoPartida());
-                itinerario.setPuntoLlegada(diaDTO.getPuntoLlegada());
-                itinerario.setDuracionEstimada(diaDTO.getDuracionEstimada());
-                itinerario.setGrupo(grupo);
-                grupo.getItinerarios().add(itinerario);
-            }
+            actualizarItinerariosInteligente(grupo, dto.getDiasItinerario());
         }
 
         // Guardar grupo actualizado
         return grupoViajeRepository.save(grupo);
+    }
+
+    private void actualizarItinerariosInteligente(GrupoViaje grupo, List<DiaItinerarioDTO> diasItinerarioNuevos) {
+        // Obtener los itinerarios existentes ordenados por día
+        List<Itinerario> itinerariosExistentes = itinerarioRepository.findByGrupoOrderByDiaNumeroAsc(grupo);
+        
+        // Crear un mapa de los itinerarios existentes por número de día para fácil acceso
+        Map<Integer, Itinerario> mapaItinerariosExistentes = itinerariosExistentes.stream()
+                .collect(Collectors.toMap(Itinerario::getDiaNumero, itinerario -> itinerario));
+        
+        // Set para trackear qué días están en la nueva lista
+        Set<Integer> diasNuevos = diasItinerarioNuevos.stream()
+                .map(DiaItinerarioDTO::getDiaNumero)
+                .collect(Collectors.toSet());
+        
+        // Procesar cada día del itinerario nuevo
+        for (DiaItinerarioDTO diaDTO : diasItinerarioNuevos) {
+            Itinerario itinerarioExistente = mapaItinerariosExistentes.get(diaDTO.getDiaNumero());
+            
+            if (itinerarioExistente != null) {
+                // El día ya existe, actualizar sus campos
+                itinerarioExistente.setTitulo(diaDTO.getTitulo());
+                itinerarioExistente.setDescripcion(diaDTO.getDescripcion());
+                itinerarioExistente.setPuntoPartida(diaDTO.getPuntoPartida());
+                itinerarioExistente.setPuntoLlegada(diaDTO.getPuntoLlegada());
+                itinerarioExistente.setDuracionEstimada(diaDTO.getDuracionEstimada());
+                // No es necesario guardar explícitamente aquí, se guardará con el grupo
+            } else {
+                // Es un día nuevo, crear itinerario
+                Itinerario nuevoItinerario = new Itinerario();
+                nuevoItinerario.setDiaNumero(diaDTO.getDiaNumero());
+                nuevoItinerario.setTitulo(diaDTO.getTitulo());
+                nuevoItinerario.setDescripcion(diaDTO.getDescripcion());
+                nuevoItinerario.setPuntoPartida(diaDTO.getPuntoPartida());
+                nuevoItinerario.setPuntoLlegada(diaDTO.getPuntoLlegada());
+                nuevoItinerario.setDuracionEstimada(diaDTO.getDuracionEstimada());
+                nuevoItinerario.setGrupo(grupo);
+                
+                // Agregarlo a la colección del grupo
+                if (grupo.getItinerarios() == null) {
+                    grupo.setItinerarios(new LinkedHashSet<>());
+                }
+                grupo.getItinerarios().add(nuevoItinerario);
+            }
+        }
+        
+        // Eliminar los días que ya no están en la nueva lista
+        List<Itinerario> itinerariosAEliminar = itinerariosExistentes.stream()
+                .filter(itinerario -> !diasNuevos.contains(itinerario.getDiaNumero()))
+                .collect(Collectors.toList());
+        
+        if (!itinerariosAEliminar.isEmpty()) {
+            // Remover de la colección del grupo
+            grupo.getItinerarios().removeAll(itinerariosAEliminar);
+            // Eliminar de la base de datos
+            itinerarioRepository.deleteAll(itinerariosAEliminar);
+        }
     }
 
 }
