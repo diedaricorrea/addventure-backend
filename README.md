@@ -77,6 +77,17 @@ git push -u origin feature/nombre-de-tu-rama
 
 ---
 
+## 📚 Documentación del Proyecto
+
+### 📋 **Reglas de Negocio**
+- **[Gestión de Grupos de Viaje](REGLAS_GRUPOS_README.md)**: Reglas completas de edición, eliminación y permisos de grupos
+
+### 🔗 **Enlaces Útiles**
+- **Permisos de Usuario**: Ver `PERMISOS_README.md` para detalles del sistema de roles
+- **Datos de Prueba**: Ver `USUARIOS_PRUEBA.md` para cuentas de testing
+
+---
+
 ## 🆘 ¿Dudas?
 
 Habla con el equipo o revisa esta guía.  

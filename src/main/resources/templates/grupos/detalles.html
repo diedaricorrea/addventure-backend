@@ -897,13 +897,13 @@
                 formData.append('descripcion', '');
 
                 // Obtener token CSRF
-                const token = document.querySelector('meta[name="_csrf"]').content;
-                const header = document.querySelector('meta[name="_csrf_header"]').content;
+                const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
                 fetch(`/chat/grupo/${grupoId}/enviar-imagen`, {
                     method: 'POST',
                     headers: {
-                        [header]: token
+                        [csrfHeader]: csrfToken
                     },
                     body: formData
                 })
@@ -1289,10 +1289,14 @@
                     confirmDeleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Eliminando...';
 
                     // Realizar petición de eliminación
+                    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+                    
                     fetch(`/grupos/${grupoId}`, {
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
+                            [csrfHeader]: csrfToken
                         }
                     })
                     .then(response => response.json())
