@@ -341,8 +341,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (fechaInicio && fechaFin && fechaInicio.value && fechaFin.value) {
-            const start = new Date(fechaInicio.value);
-            const end = new Date(fechaFin.value);
+            const start = new Date(fechaInicio.value + 'T00:00:00');
+            const end = new Date(fechaFin.value + 'T00:00:00');
 
             if (start > end) {
                 if (noDatesWarning) {
@@ -355,8 +355,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            const diffTime = Math.abs(end - start);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            // Cálculo corregido del número de días - evitar problemas de zona horaria
+            const diffTime = end.getTime() - start.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
             if (tripDaysBadge) {
                 tripDaysBadge.textContent = `${diffDays} días de viaje`;
@@ -416,8 +417,8 @@ document.addEventListener('DOMContentLoaded', function() {
         itineraryAccordion.innerHTML = '';
         
         for (let i = 0; i < days; i++) {
-            const currentDate = new Date(startDate);
-            currentDate.setDate(startDate.getDate() + i);
+            // Corrección del cálculo de fecha: usar getTime() para evitar problemas de zona horaria
+            const currentDate = new Date(startDate.getTime() + (i * 24 * 60 * 60 * 1000));
             
             const dayData = itineraryData[i] || {
                 diaNumero: i + 1,
