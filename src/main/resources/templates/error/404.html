@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AddVenture - Página No Encontrada (404)</title>
+
+    <!-- BLOQUE DE LINKS FRAGMENTS -->
+    <th:block th:replace="~{fragments/head :: head-links}"></th:block>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    
+    <style>
+        .error-container {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .error-icon {
+            font-size: 5rem;
+            color: #e74c3c;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        .error-code {
+            font-size: 6rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .solutions-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .action-btn {
+            margin: 0.5rem;
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            border: none;
+            color: white;
+        }
+        
+        .btn-success-custom {
+            background: linear-gradient(45deg, #27ae60, #229954);
+            border: none;
+            color: white;
+        }
+        
+        .btn-danger-custom {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border: none;
+            color: white;
+        }
+        
+        .btn-secondary-custom {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+            border: none;
+            color: white;
+        }
+        
+        .back-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            display: inline-block;
+            transition: color 0.3s ease;
+        }
+        
+        .back-link:hover {
+            color: #2980b9;
+            text-decoration: none;
+        }
+        
+        .search-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .search-input {
+            border-radius: 25px;
+            border: 2px solid #e9ecef;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .search-input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .error-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+
+<body>
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    
+    <!-- Main Content -->
+    <main class="container py-4 py-md-5">
+        <a href="javascript:history.back()" class="back-link">
+            <i class="bi bi-arrow-left me-2"></i>
+            Volver
+        </a>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-7">
+                <div class="error-container text-center">
+                    <div class="position-relative">
+                        <i class="bi bi-search error-icon"></i>
+                        
+                        <div class="error-code">404</div>
+                        
+                        <h1 class="fw-bold text-dark mb-3">
+                            ¡Oops! Página No Encontrada
+                        </h1>
+                        
+                        <p class="lead text-muted mb-4">
+                            La página que buscas no existe, ha sido movida o la URL no es correcta
+                        </p>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>¿Escribiste la URL manualmente?</strong> Verifica que esté escrita correctamente
+                        </div>
+                        
+                        <!-- Buscador rápido -->
+                        <div class="search-container">
+                            <h5 class="mb-3">
+                                <i class="bi bi-compass me-2"></i>
+                                ¿Qué estás buscando?
+                            </h5>
+                            <div class="input-group">
+                                <input type="text" class="form-control search-input" 
+                                       placeholder="Buscar grupos de viaje, destinos..." id="quickSearch">
+                                <button class="btn btn-primary-custom" type="button" onclick="performQuickSearch()">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="solutions-card">
+                            <h4 class="text-danger mb-3">
+                                <i class="bi bi-lightbulb me-2"></i>
+                                ¿Qué puedes hacer?
+                            </h4>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-house-fill text-primary me-2 mt-1"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Ir al Inicio</h6>
+                                            <p class="small text-muted mb-0">
+                                                Explora los grupos de viaje más populares
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-geo-alt-fill text-success me-2 mt-1"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Buscar Grupos</h6>
+                                            <p class="small text-muted mb-0">
+                                                Encuentra viajes por destino o fecha
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-plus-circle-fill text-warning me-2 mt-1"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Crear Grupo</h6>
+                                            <p class="small text-muted mb-0">
+                                                Organiza tu propio viaje de aventura
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-question-circle-fill text-info me-2 mt-1"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Obtener Ayuda</h6>
+                                            <p class="small text-muted mb-0">
+                                                Contacta nuestro equipo de soporte
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h5 class="mb-3">Acciones Rápidas</h5>
+                            
+                            <a href="/" class="btn btn-primary-custom action-btn">
+                                <i class="bi bi-house me-2"></i>
+                                Ir al Inicio
+                            </a>
+                            
+                            <a href="/grupos" class="btn btn-success-custom action-btn">
+                                <i class="bi bi-geo-alt me-2"></i>
+                                Explorar Grupos
+                            </a>
+                            
+                            <a href="/grupos/crear" class="btn btn-danger-custom action-btn">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                Crear Grupo
+                            </a>
+                            
+                            <a href="/support/help" class="btn btn-secondary-custom action-btn">
+                                <i class="bi bi-headset me-2"></i>
+                                Contactar Soporte
+                            </a>
+                        </div>
+                        
+                        <!-- Detalles técnicos del error (solo en modo desarrollo) -->
+                        <div th:if="${isDevelopment}" class="error-details">
+                            <small>
+                                <strong>Detalles técnicos:</strong><br>
+                                <span th:if="${requestUri}">URI solicitada: <span th:text="${requestUri}"></span><br></span>
+                                <span th:if="${errorMessage}">Mensaje: <span th:text="${errorMessage}"></span><br></span>
+                                Código de estado: 404
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function performQuickSearch() {
+            const searchTerm = document.getElementById('quickSearch').value;
+            if (searchTerm.trim()) {
+                // Redirigir a la página de búsqueda con el término
+                window.location.href = `/grupos?destino=${encodeURIComponent(searchTerm)}`;
+            }
+        }
+        
+        // Permitir búsqueda con Enter
+        document.getElementById('quickSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performQuickSearch();
+            }
+        });
+    </script>
+</body>
+</html> 

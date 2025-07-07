@@ -82,6 +82,9 @@ git push -u origin feature/nombre-de-tu-rama
 ### 📋 **Reglas de Negocio**
 - **[Gestión de Grupos de Viaje](REGLAS_GRUPOS_README.md)**: Reglas completas de edición, eliminación y permisos de grupos
 
+### 🎨 **Sistema de Usuario**
+- **[Páginas de Error Personalizadas](PÁGINAS_ERROR_README.md)**: Sistema completo de manejo de errores HTTP con páginas elegantes
+
 ### 🔗 **Enlaces Útiles**
 - **Permisos de Usuario**: Ver `PERMISOS_README.md` para detalles del sistema de roles
 - **Datos de Prueba**: Ver `USUARIOS_PRUEBA.md` para cuentas de testing

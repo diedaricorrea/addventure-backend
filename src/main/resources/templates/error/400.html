@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AddVenture - Solicitud Incorrecta (400)</title>
+
+    <!-- BLOQUE DE LINKS FRAGMENTS -->
+    <th:block th:replace="~{fragments/head :: head-links}"></th:block>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    
+    <style>
+        .error-container {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .error-icon {
+            font-size: 5rem;
+            color: #3498db;
+            margin-bottom: 1rem;
+            animation: wiggle 3s ease-in-out infinite;
+        }
+        
+        @keyframes wiggle {
+            0%, 7% { transform: rotateZ(0); }
+            15% { transform: rotateZ(-15deg); }
+            20% { transform: rotateZ(10deg); }
+            25% { transform: rotateZ(-10deg); }
+            30% { transform: rotateZ(6deg); }
+            35% { transform: rotateZ(-4deg); }
+            40%, 100% { transform: rotateZ(0); }
+        }
+        
+        .error-code {
+            font-size: 6rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .solutions-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border-left: 4px solid #3498db;
+        }
+        
+        .action-btn {
+            margin: 0.5rem;
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+        }
+        
+        .btn-blue-custom {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            border: none;
+            color: white;
+        }
+        
+        .btn-success-custom {
+            background: linear-gradient(45deg, #27ae60, #229954);
+            border: none;
+            color: white;
+        }
+        
+        .btn-warning-custom {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            border: none;
+            color: white;
+        }
+        
+        .btn-secondary-custom {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+            border: none;
+            color: white;
+        }
+        
+        .back-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            display: inline-block;
+            transition: color 0.3s ease;
+        }
+        
+        .back-link:hover {
+            color: #2980b9;
+            text-decoration: none;
+        }
+        
+        .validation-info {
+            background: #d6eaf8;
+            border: 1px solid #a9cce3;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .common-issues {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .error-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .validation-item {
+            display: flex;
+            align-items: center;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #3498db;
+        }
+    </style>
+</head>
+
+<body>
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    
+    <!-- Main Content -->
+    <main class="container py-4 py-md-5">
+        <a href="javascript:history.back()" class="back-link">
+            <i class="bi bi-arrow-left me-2"></i>
+            Volver
+        </a>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-7">
+                <div class="error-container text-center">
+                    <div class="position-relative">
+                        <i class="bi bi-exclamation-circle error-icon"></i>
+                        
+                        <div class="error-code">400</div>
+                        
+                        <h1 class="fw-bold text-dark mb-3">
+                            📝 Solicitud Incorrecta
+                        </h1>
+                        
+                        <p class="lead text-muted mb-4">
+                            Los datos enviados no tienen el formato correcto o contienen información inválida
+                        </p>
+                        
+                        <div class="validation-info">
+                            <i class="bi bi-info-circle text-primary me-2"></i>
+                            <strong>¿Qué significa esto?</strong>
+                            <p class="mt-2 mb-0 text-start">
+                                El servidor no pudo procesar tu solicitud porque los datos enviados no cumplen 
+                                con los requisitos esperados o contienen errores de formato.
+                            </p>
+                        </div>
+                        
+                        <div class="common-issues">
+                            <h5 class="text-warning mb-3">
+                                <i class="bi bi-list-check me-2"></i>
+                                Problemas Comunes
+                            </h5>
+                            
+                            <div class="validation-item">
+                                <i class="bi bi-envelope text-danger me-2"></i>
+                                <span><strong>Email inválido:</strong> Formato incorrecto (ejemplo@dominio.com)</span>
+                            </div>
+                            
+                            <div class="validation-item">
+                                <i class="bi bi-calendar text-warning me-2"></i>
+                                <span><strong>Fechas incorrectas:</strong> Formato inválido o fechas en el pasado</span>
+                            </div>
+                            
+                            <div class="validation-item">
+                                <i class="bi bi-type text-info me-2"></i>
+                                <span><strong>Campos requeridos:</strong> Información obligatoria faltante</span>
+                            </div>
+                            
+                            <div class="validation-item">
+                                <i class="bi bi-hash text-success me-2"></i>
+                                <span><strong>Números inválidos:</strong> Valores fuera de rango permitido</span>
+                            </div>
+                        </div>
+                        
+                        <div class="solutions-card">
+                            <h4 class="text-primary mb-3">
+                                <i class="bi bi-lightbulb me-2"></i>
+                                ¿Cómo solucionarlo?
+                            </h4>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-arrow-clockwise text-primary me-2 mt-1"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Revisar Formulario</h6>
+                                            <p class="small text-muted mb-0">
+                                                Vuelve atrás y verifica todos los campos
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-check-circle text-success me-2 mt-1"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Validar Datos</h6>
+                                            <p class="small text-muted mb-0">
+                                                Asegúrate que los datos cumplan los requisitos
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-file-text text-warning me-2 mt-1"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Consultar Ayuda</h6>
+                                            <p class="small text-muted mb-0">
+                                                Revisa ejemplos y formatos correctos
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-headset text-info me-2 mt-1"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Contactar Soporte</h6>
+                                            <p class="small text-muted mb-0">
+                                                Si el problema persiste, contáctanos
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h5 class="mb-3">Acciones Disponibles</h5>
+                            
+                            <button onclick="history.back()" class="btn btn-blue-custom action-btn">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                Volver al Formulario
+                            </button>
+                            
+                            <a href="/" class="btn btn-success-custom action-btn">
+                                <i class="bi bi-house me-2"></i>
+                                Ir al Inicio
+                            </a>
+                            
+                            <a href="/support/help" class="btn btn-warning-custom action-btn">
+                                <i class="bi bi-question-circle me-2"></i>
+                                Ver Ayuda
+                            </a>
+                            
+                            <a href="/support/help" class="btn btn-secondary-custom action-btn">
+                                <i class="bi bi-headset me-2"></i>
+                                Contactar Soporte
+                            </a>
+                        </div>
+                        
+                        <!-- Consejos adicionales -->
+                        <div class="mt-4 pt-3 border-top">
+                            <h6 class="text-muted">💡 Consejos útiles:</h6>
+                            <ul class="text-start text-muted small">
+                                <li>Revisa los campos marcados con asterisco (*) - son obligatorios</li>
+                                <li>Verifica que las fechas estén en formato correcto</li>
+                                <li>Asegúrate que los emails tengan formato válido</li>
+                                <li>Los números deben estar dentro de rangos permitidos</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Detalles técnicos del error (solo en modo desarrollo) -->
+                        <div th:if="${isDevelopment}" class="error-details">
+                            <small>
+                                <strong>Detalles técnicos:</strong><br>
+                                <span th:if="${requestUri}">URI: <span th:text="${requestUri}"></span><br></span>
+                                <span th:if="${errorMessage}">Error: <span th:text="${errorMessage}"></span><br></span>
+                                Código de estado: 400<br>
+                                Tipo: Bad Request
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AddVenture - Error del Servidor (500)</title>
+
+    <!-- BLOQUE DE LINKS FRAGMENTS -->
+    <th:block th:replace="~{fragments/head :: head-links}"></th:block>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    
+    <style>
+        .error-container {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .error-icon {
+            font-size: 5rem;
+            color: #e67e22;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .error-code {
+            font-size: 6rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #e67e22, #d35400);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .solutions-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border-left: 4px solid #e67e22;
+        }
+        
+        .action-btn {
+            margin: 0.5rem;
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            border: none;
+            color: white;
+        }
+        
+        .btn-orange-custom {
+            background: linear-gradient(45deg, #e67e22, #d35400);
+            border: none;
+            color: white;
+        }
+        
+        .btn-success-custom {
+            background: linear-gradient(45deg, #27ae60, #229954);
+            border: none;
+            color: white;
+        }
+        
+        .btn-secondary-custom {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+            border: none;
+            color: white;
+        }
+        
+        .back-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            display: inline-block;
+            transition: color 0.3s ease;
+        }
+        
+        .back-link:hover {
+            color: #2980b9;
+            text-decoration: none;
+        }
+        
+        .server-info {
+            background: #ffeaa7;
+            border: 1px solid #fdcb6e;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 0.25rem;
+        }
+        
+        .status-checking {
+            background: #ddd6fe;
+            color: #7c3aed;
+        }
+        
+        .status-operational {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .status-issues {
+            background: #fed7d7;
+            color: #dc2626;
+        }
+        
+        .error-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .retry-button {
+            animation: glow 2s infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { box-shadow: 0 0 5px #e67e22; }
+            to { box-shadow: 0 0 20px #e67e22, 0 0 30px #e67e22; }
+        }
+    </style>
+</head>
+
+<body>
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    
+    <!-- Main Content -->
+    <main class="container py-4 py-md-5">
+        <a href="javascript:history.back()" class="back-link">
+            <i class="bi bi-arrow-left me-2"></i>
+            Volver
+        </a>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-7">
+                <div class="error-container text-center">
+                    <div class="position-relative">
+                        <i class="bi bi-exclamation-triangle error-icon"></i>
+                        
+                        <div class="error-code">500</div>
+                        
+                        <h1 class="fw-bold text-dark mb-3">
+                            ⚙️ Error del Servidor
+                        </h1>
+                        
+                        <p class="lead text-muted mb-4">
+                            Ha ocurrido un error interno en nuestros servidores. Nuestro equipo técnico está trabajando para solucionarlo
+                        </p>
+                        
+                        <div class="server-info">
+                            <i class="bi bi-info-circle text-warning me-2"></i>
+                            <strong>Estado del sistema:</strong>
+                            <div class="mt-2">
+                                <span class="status-indicator status-checking">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    Verificando servicios...
+                                </span>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                Este error ha sido reportado automáticamente a nuestro equipo
+                            </small>
+                        </div>
+                        
+                        <div class="solutions-card">
+                            <h4 class="text-warning mb-3">
+                                <i class="bi bi-tools me-2"></i>
+                                ¿Qué puedes hacer mientras tanto?
+                            </h4>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-arrow-clockwise text-primary me-2 mt-1"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Intentar de Nuevo</h6>
+                                            <p class="small text-muted mb-0">
+                                                Espera unos minutos y vuelve a intentarlo
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-house-fill text-success me-2 mt-1"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Ir al Inicio</h6>
+                                            <p class="small text-muted mb-0">
+                                                Otras páginas pueden estar funcionando
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-bookmark-check text-info me-2 mt-1"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Guardar Enlace</h6>
+                                            <p class="small text-muted mb-0">
+                                                Marca esta página para intentar más tarde
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-headset text-warning me-2 mt-1"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Reportar Problema</h6>
+                                            <p class="small text-muted mb-0">
+                                                Si el error persiste, contáctanos
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h5 class="mb-3">Acciones Disponibles</h5>
+                            
+                            <button onclick="location.reload()" class="btn btn-orange-custom action-btn retry-button">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Reintentar
+                            </button>
+                            
+                            <a href="/" class="btn btn-primary-custom action-btn">
+                                <i class="bi bi-house me-2"></i>
+                                Ir al Inicio
+                            </a>
+                            
+                            <a href="/grupos" class="btn btn-success-custom action-btn">
+                                <i class="bi bi-geo-alt me-2"></i>
+                                Explorar Grupos
+                            </a>
+                            
+                            <a href="/support/help" class="btn btn-secondary-custom action-btn">
+                                <i class="bi bi-headset me-2"></i>
+                                Reportar Problema
+                            </a>
+                        </div>
+                        
+                        <!-- Información técnica adicional -->
+                        <div class="mt-4 pt-3 border-top">
+                            <p class="text-muted small mb-1">
+                                <i class="bi bi-clock me-1"></i>
+                                Error detectado: <span id="errorTime"></span>
+                            </p>
+                            <p class="text-muted small mb-0">
+                                <i class="bi bi-shield-check me-1"></i>
+                                ID de referencia: <span id="errorId"></span>
+                            </p>
+                        </div>
+                        
+                        <!-- Detalles técnicos del error (solo en modo desarrollo) -->
+                        <div th:if="${isDevelopment}" class="error-details">
+                            <small>
+                                <strong>Detalles técnicos:</strong><br>
+                                <span th:if="${requestUri}">URI: <span th:text="${requestUri}"></span><br></span>
+                                <span th:if="${errorMessage}">Error: <span th:text="${errorMessage}"></span><br></span>
+                                Código de estado: 500<br>
+                                Timestamp: <span id="techTimestamp"></span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Mostrar timestamp del error
+        const now = new Date();
+        document.getElementById('errorTime').textContent = now.toLocaleString();
+        document.getElementById('errorId').textContent = 'ERR-' + now.getTime().toString(36).toUpperCase();
+        
+        // En modo desarrollo, mostrar timestamp técnico
+        const techTimestamp = document.getElementById('techTimestamp');
+        if (techTimestamp) {
+            techTimestamp.textContent = now.toISOString();
+        }
+        
+        // Simular verificación de estado del sistema
+        setTimeout(() => {
+            const statusIndicator = document.querySelector('.status-checking');
+            if (statusIndicator) {
+                // Simular resultado aleatorio para demostración
+                const isOperational = Math.random() > 0.3;
+                
+                if (isOperational) {
+                    statusIndicator.className = 'status-indicator status-operational';
+                    statusIndicator.innerHTML = '<i class="bi bi-check-circle me-1"></i>Servicios operativos';
+                } else {
+                    statusIndicator.className = 'status-indicator status-issues';
+                    statusIndicator.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Problemas detectados';
+                }
+            }
+        }, 2000);
+        
+        // Auto-retry después de 30 segundos (opcional)
+        let autoRetryTimer;
+        function startAutoRetry() {
+            let countdown = 30;
+            const retryBtn = document.querySelector('.retry-button');
+            const originalText = retryBtn.innerHTML;
+            
+            autoRetryTimer = setInterval(() => {
+                retryBtn.innerHTML = `<i class="bi bi-arrow-clockwise me-2"></i>Auto-reintentar en ${countdown}s`;
+                countdown--;
+                
+                if (countdown < 0) {
+                    clearInterval(autoRetryTimer);
+                    location.reload();
+                }
+            }, 1000);
+        }
+        
+        // Iniciar auto-retry si el usuario permanece en la página
+        setTimeout(startAutoRetry, 10000);
+        
+        // Cancelar auto-retry si el usuario interactúa
+        document.addEventListener('click', () => {
+            if (autoRetryTimer) {
+                clearInterval(autoRetryTimer);
+            }
+        });
+    </script>
+</body>
+</html> 
