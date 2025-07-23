@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- CSRF Token -->
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
     <title>Detalle de Grupo - AddVenture</title>
     <!-- BLOQUE DE LINKS FRAGMENTS -->
     <th:block th:replace="~{fragments/head :: head-links}"></th:block>
@@ -87,77 +87,93 @@
                                 </div>
 
                                 <!-- Itinerary -->
-                                <div class="mb-5" th:if="${itinerariosOrdenados != null && !itinerariosOrdenados.isEmpty()}">
+                                <div class="mb-5"
+                                    th:if="${itinerariosOrdenados != null && !itinerariosOrdenados.isEmpty()}">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <h2 class="fs-3 fw-bold mb-0">Itinerario del viaje</h2>
-                                        <span class="badge bg-primary" th:text="${#lists.size(itinerariosOrdenados)} + ' días'">0 días</span>
+                                        <span class="badge bg-primary"
+                                            th:text="${#lists.size(itinerariosOrdenados)} + ' días'">0 días</span>
                                     </div>
-                                    
+
                                     <div class="accordion" id="itinerarioAccordion">
-                                        <div class="accordion-item mb-3" th:each="itinerario, iterStat : ${itinerariosOrdenados}">
+                                        <div class="accordion-item mb-3"
+                                            th:each="itinerario, iterStat : ${itinerariosOrdenados}">
                                             <h2 class="accordion-header" th:id="'heading' + ${itinerario.diaNumero}">
-                                                <button class="accordion-button" type="button" 
-                                                        data-bs-toggle="collapse" 
-                                                        th:data-bs-target="'#collapse' + ${itinerario.diaNumero}"
-                                                        th:aria-controls="'collapse' + ${itinerario.diaNumero}"
-                                                        th:class="${iterStat.first} ? 'accordion-button' : 'accordion-button collapsed'">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                                    th:data-bs-target="'#collapse' + ${itinerario.diaNumero}"
+                                                    th:aria-controls="'collapse' + ${itinerario.diaNumero}"
+                                                    th:class="${iterStat.first} ? 'accordion-button' : 'accordion-button collapsed'">
                                                     <div class="d-flex align-items-center w-100">
                                                         <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
-                                                             style="width: 32px; height: 32px; min-width: 32px;"
-                                                             th:text="${itinerario.diaNumero}">1</div>
+                                                            style="width: 32px; height: 32px; min-width: 32px;"
+                                                            th:text="${itinerario.diaNumero}">1</div>
                                                         <div class="flex-grow-1">
-                                                            <strong th:text="${itinerario.titulo}">Título del día</strong>
-                                                            <div class="small text-muted" 
-                                                                 th:if="${itinerario.duracionEstimada != null && !itinerario.duracionEstimada.isEmpty()}"
-                                                                 th:text="'Duración: ' + ${itinerario.duracionEstimada}">
+                                                            <strong th:text="${itinerario.titulo}">Título del
+                                                                día</strong>
+                                                            <div class="small text-muted"
+                                                                th:if="${itinerario.duracionEstimada != null && !itinerario.duracionEstimada.isEmpty()}"
+                                                                th:text="'Duración: ' + ${itinerario.duracionEstimada}">
                                                                 Duración estimada
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </button>
                                             </h2>
-                                            <div th:id="'collapse' + ${itinerario.diaNumero}" 
-                                                 th:class="${iterStat.first} ? 'accordion-collapse collapse show' : 'accordion-collapse collapse'"
-                                                 th:aria-labelledby="'heading' + ${itinerario.diaNumero}"
-                                                 data-bs-parent="#itinerarioAccordion">
+                                            <div th:id="'collapse' + ${itinerario.diaNumero}"
+                                                th:class="${iterStat.first} ? 'accordion-collapse collapse show' : 'accordion-collapse collapse'"
+                                                th:aria-labelledby="'heading' + ${itinerario.diaNumero}"
+                                                data-bs-parent="#itinerarioAccordion">
                                                 <div class="accordion-body">
                                                     <!-- Descripción -->
-                                                    <div class="mb-3" th:if="${itinerario.descripcion != null && !itinerario.descripcion.isEmpty()}">
+                                                    <div class="mb-3"
+                                                        th:if="${itinerario.descripcion != null && !itinerario.descripcion.isEmpty()}">
                                                         <h6 class="fw-semibold text-dark mb-2">
-                                                            <i class="bi bi-card-text me-2 text-primary"></i>Descripción de actividades
+                                                            <i class="bi bi-card-text me-2 text-primary"></i>Descripción
+                                                            de actividades
                                                         </h6>
-                                                        <p class="mb-0 text-secondary" th:text="${itinerario.descripcion}">
+                                                        <p class="mb-0 text-secondary"
+                                                            th:text="${itinerario.descripcion}">
                                                             Descripción de las actividades del día
                                                         </p>
                                                     </div>
-                                                    
+
                                                     <!-- Puntos de partida y llegada -->
-                                                    <div class="row" th:if="${(itinerario.puntoPartida != null && !itinerario.puntoPartida.isEmpty()) || (itinerario.puntoLlegada != null && !itinerario.puntoLlegada.isEmpty())}">
-                                                        <div class="col-md-6 mb-3" th:if="${itinerario.puntoPartida != null && !itinerario.puntoPartida.isEmpty()}">
+                                                    <div class="row"
+                                                        th:if="${(itinerario.puntoPartida != null && !itinerario.puntoPartida.isEmpty()) || (itinerario.puntoLlegada != null && !itinerario.puntoLlegada.isEmpty())}">
+                                                        <div class="col-md-6 mb-3"
+                                                            th:if="${itinerario.puntoPartida != null && !itinerario.puntoPartida.isEmpty()}">
                                                             <h6 class="fw-semibold text-dark mb-2">
-                                                                <i class="bi bi-geo-alt me-2 text-success"></i>Punto de partida
+                                                                <i class="bi bi-geo-alt me-2 text-success"></i>Punto de
+                                                                partida
                                                             </h6>
-                                                            <p class="mb-0 text-secondary" th:text="${itinerario.puntoPartida}">
+                                                            <p class="mb-0 text-secondary"
+                                                                th:text="${itinerario.puntoPartida}">
                                                                 Punto de partida
                                                             </p>
                                                         </div>
-                                                        <div class="col-md-6 mb-3" th:if="${itinerario.puntoLlegada != null && !itinerario.puntoLlegada.isEmpty()}">
+                                                        <div class="col-md-6 mb-3"
+                                                            th:if="${itinerario.puntoLlegada != null && !itinerario.puntoLlegada.isEmpty()}">
                                                             <h6 class="fw-semibold text-dark mb-2">
-                                                                <i class="bi bi-geo-alt-fill me-2 text-danger"></i>Punto de llegada
+                                                                <i class="bi bi-geo-alt-fill me-2 text-danger"></i>Punto
+                                                                de llegada
                                                             </h6>
-                                                            <p class="mb-0 text-secondary" th:text="${itinerario.puntoLlegada}">
+                                                            <p class="mb-0 text-secondary"
+                                                                th:text="${itinerario.puntoLlegada}">
                                                                 Punto de llegada
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     <!-- Duración estimada (si no se mostró en el header) -->
-                                                    <div class="mb-0" th:if="${itinerario.duracionEstimada != null && !itinerario.duracionEstimada.isEmpty()}">
+                                                    <div class="mb-0"
+                                                        th:if="${itinerario.duracionEstimada != null && !itinerario.duracionEstimada.isEmpty()}">
                                                         <h6 class="fw-semibold text-dark mb-2">
-                                                            <i class="bi bi-clock me-2 text-warning"></i>Duración estimada
+                                                            <i class="bi bi-clock me-2 text-warning"></i>Duración
+                                                            estimada
                                                         </h6>
-                                                        <span class="badge bg-outline-primary text-primary border border-primary" 
-                                                              th:text="${itinerario.duracionEstimada}">
+                                                        <span
+                                                            class="badge bg-outline-primary text-primary border border-primary"
+                                                            th:text="${itinerario.duracionEstimada}">
                                                             Duración
                                                         </span>
                                                     </div>
@@ -177,18 +193,20 @@
                                             <div class="member-card text-center position-relative h-100">
                                                 <div class="avatar-det bg-primary text-white mx-auto mb-2">
                                                     <img th:if="${grupo.creador.fotoPerfil != null}"
-                                                         th:src="@{/uploads/{img}(img=${grupo.creador.fotoPerfil})}"
-                                                         alt="Imagen de perfil"/>
-                                                    <div class="avatar-content" th:if="${grupo.creador.fotoPerfil == null}"
-                                                         th:text="${grupo.creador.iniciales}">OR</div>
+                                                        th:src="@{/uploads/{img}(img=${grupo.creador.fotoPerfil})}"
+                                                        alt="Imagen de perfil" />
+                                                    <div class="avatar-content"
+                                                        th:if="${grupo.creador.fotoPerfil == null}"
+                                                        th:text="${grupo.creador.iniciales}">OR</div>
                                                 </div>
-                                                <div class="fw-medium" th:text="${grupo.creador.nombre + ' ' + grupo.creador.apellidos}">Nombre Organizador</div>
+                                                <div class="fw-medium"
+                                                    th:text="${grupo.creador.nombre + ' ' + grupo.creador.apellidos}">
+                                                    Nombre Organizador</div>
                                                 <div class="organizer-label">Organizador</div>
                                                 <!-- Mostrar rol descriptivo del creador si existe -->
-                                                <div th:if="${creadorRolDescriptivo != null && creadorRolDescriptivo != 'MIEMBRO'}" 
-                                                     class="mt-1">
-                                                    <span class="badge bg-warning text-dark small" 
-                                                          th:text="${creadorRolDescriptivo == 'GUÍA' ? '🗺️ Guía' : 
+                                                <div th:if="${creadorRolDescriptivo != null && creadorRolDescriptivo != 'MIEMBRO'}"
+                                                    class="mt-1">
+                                                    <span class="badge bg-warning text-dark small" th:text="${creadorRolDescriptivo == 'GUÍA' ? '🗺️ Guía' : 
                                                                     creadorRolDescriptivo == 'COORDINADOR' ? '📋 Coordinador' : 
                                                                     creadorRolDescriptivo == 'TESORERO' ? '💰 Tesorero' : 
                                                                     creadorRolDescriptivo == 'FOTOGRAFO' ? '📸 Fotógrafo' : 
@@ -211,23 +229,26 @@
                                         <div class="col" th:each="participante : ${participantesAceptadosList}"
                                             th:if="${participante.usuario.idUsuario != grupo.creador.idUsuario}">
                                             <div class="member-card text-center position-relative h-100">
-                                                <div class="avatar-det bg-secondary text-dark mx-auto mb-2 position-relative">
+                                                <div
+                                                    class="avatar-det bg-secondary text-dark mx-auto mb-2 position-relative">
                                                     <img th:if="${participante.usuario.fotoPerfil != null}"
-                                                         th:src="@{/uploads/{img}(img=${participante.usuario.fotoPerfil})}"
-                                                         alt="Imagen de perfil"/>
-                                                    <div class="avatar-content" th:if="${participante.usuario.fotoPerfil == null}"
-                                                         th:text="${participante.usuario.iniciales}">XX</div>
+                                                        th:src="@{/uploads/{img}(img=${participante.usuario.fotoPerfil})}"
+                                                        alt="Imagen de perfil" />
+                                                    <div class="avatar-content"
+                                                        th:if="${participante.usuario.fotoPerfil == null}"
+                                                        th:text="${participante.usuario.iniciales}">XX</div>
                                                     <span th:if="${participante.usuario.esVerificado}"
-                                                          class="verificado-badge">
+                                                        class="verificado-badge">
                                                         <i class="bi bi-check-circle-fill fs-6"></i>
                                                     </span>
                                                 </div>
-                                                <div class="fw-medium" th:text="${participante.usuario.nombre + ' ' + participante.usuario.apellidos}">Nombre Participante</div>
+                                                <div class="fw-medium"
+                                                    th:text="${participante.usuario.nombre + ' ' + participante.usuario.apellidos}">
+                                                    Nombre Participante</div>
                                                 <!-- Mostrar rol descriptivo si existe -->
-                                                <div th:if="${participante.rolParticipante != null && participante.rolParticipante != 'MIEMBRO'}" 
-                                                     class="mt-1">
-                                                    <span class="badge bg-info text-white small" 
-                                                          th:text="${participante.rolParticipante == 'GUÍA' ? '🗺️ Guía' : 
+                                                <div th:if="${participante.rolParticipante != null && participante.rolParticipante != 'MIEMBRO'}"
+                                                    class="mt-1">
+                                                    <span class="badge bg-info text-white small" th:text="${participante.rolParticipante == 'GUÍA' ? '🗺️ Guía' : 
                                                                     participante.rolParticipante == 'COORDINADOR' ? '📋 Coordinador' : 
                                                                     participante.rolParticipante == 'TESORERO' ? '💰 Tesorero' : 
                                                                     participante.rolParticipante == 'FOTOGRAFO' ? '📸 Fotógrafo' : 
@@ -246,7 +267,7 @@
 
                                                 <!-- Dropdown para gestión de miembros -->
                                                 <div class="dropdown position-absolute top-0 end-0 me-2 mt-2"
-                                                    th:if="${@permisos.puedeGestionar(grupo.idGrupo, participante.usuario.idUsuario)}">
+                                                    th:if="${@permisos.puedeGestionar(grupo.idGrupo, participante.usuario.idUsuario) && grupo.estado == 'activo'}">
                                                     <button class="btn btn-sm btn-light border-0" type="button"
                                                         data-bs-toggle="dropdown" aria-expanded="false">
                                                         <i class="bi bi-three-dots-vertical"></i>
@@ -353,9 +374,10 @@
                                     </button>
 
                                     <!-- Estado de solicitud pendiente -->
-                                    <div class="alert alert-warning" 
-                                         th:if="${#authentication.isAuthenticated() && estadoSolicitud == 'PENDIENTE'}">
-                                        <i class="bi bi-clock me-2"></i> Solicitud enviada. Esperando aprobación del líder.
+                                    <div class="alert alert-warning"
+                                        th:if="${#authentication.isAuthenticated() && estadoSolicitud == 'PENDIENTE'}">
+                                        <i class="bi bi-clock me-2"></i> Solicitud enviada. Esperando aprobación del
+                                        líder.
                                     </div>
 
                                     <!-- Estado de solicitud rechazada -->
@@ -376,14 +398,16 @@
                                     </button>
 
                                     <!-- Botón para editar grupo (si tiene permisos y grupo activo) -->
-                                    <a th:href="@{/grupos/editar/{id}(id=${grupo.idGrupo})}" class="btn btn-outline-secondary"
-                                       th:if="${#authentication.isAuthenticated() && @permisos.puedeEditarGrupo(grupo.idGrupo) && grupo.estado == 'activo'}">
+                                    <a th:href="@{/grupos/editar/{id}(id=${grupo.idGrupo})}"
+                                        class="btn btn-outline-secondary"
+                                        th:if="${#authentication.isAuthenticated() && @permisos.puedeEditarGrupo(grupo.idGrupo) && grupo.estado == 'activo'}">
                                         <i class="bi bi-pencil me-2"></i> Editar grupo
                                     </a>
 
                                     <!-- Botón para calificar viajeros (si es miembro y el viaje terminó) -->
-                                    <a th:href="@{/calificaciones/grupo/{id}(id=${grupo.idGrupo})}" class="btn btn-outline-primary"
-                                       th:if="${#authentication.isAuthenticated() && @permisos.puedeAccederChat(grupo.idGrupo) && grupo.estado == 'cerrado'}">
+                                    <a th:href="@{/calificaciones/grupo/{id}(id=${grupo.idGrupo})}"
+                                        class="btn btn-outline-primary"
+                                        th:if="${#authentication.isAuthenticated() && @permisos.puedeAccederChat(grupo.idGrupo) && grupo.estado == 'cerrado'}">
                                         <i class="bi bi-star me-2"></i> Calificar viajeros
                                     </a>
 
@@ -400,11 +424,12 @@
                                         <i class="bi bi-trash me-2"></i> Eliminar grupo
                                     </button>
 
-                                                        <!-- Ver galería de fotos (si el viaje está cerrado/concluido y fue participante) -->
-                    <a th:href="@{/grupos/{id}/galeria-fotos(id=${grupo.idGrupo})}" class="btn btn-outline-info"
-                       th:if="${#authentication.isAuthenticated() && @permisos.puedeAccederChat(grupo.idGrupo) && (grupo.estado == 'cerrado' || grupo.estado == 'concluido')}">
-                        <i class="bi bi-images me-2"></i> Ver galería de fotos
-                    </a>
+                                    <!-- Ver galería de fotos (si el viaje está cerrado/concluido y fue participante) -->
+                                    <a th:href="@{/grupos/{id}/galeria-fotos(id=${grupo.idGrupo})}"
+                                        class="btn btn-outline-info"
+                                        th:if="${#authentication.isAuthenticated() && @permisos.puedeAccederChat(grupo.idGrupo) && (grupo.estado == 'cerrado' || grupo.estado == 'concluido')}">
+                                        <i class="bi bi-images me-2"></i> Ver galería de fotos
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -436,32 +461,37 @@
                                 </span>
                             </div>
 
-                                        <div class="card-body p-0" style="height: 500px; display: flex; flex-direction: column;">
-                <div class="chat-container p-3 flex-grow-1" id="chatMessages" style="overflow-y: auto; max-height: 100%;">
-                    <!-- Mensajes del chat (se cargarían dinámicamente) -->
-                    <div class="alert alert-info text-center" th:if="${!@permisos.puedeAccederChat(grupo.idGrupo)}">
-                        <i class="bi bi-lock me-2"></i>
-                        Debes unirte al grupo para acceder al chat
-                    </div>
-                </div>
+                            <div class="card-body p-0" style="height: 500px; display: flex; flex-direction: column;">
+                                <div class="chat-container p-3 flex-grow-1" id="chatMessages"
+                                    style="overflow-y: auto; max-height: 100%;">
+                                    <!-- Mensajes del chat (se cargarían dinámicamente) -->
+                                    <div class="alert alert-info text-center"
+                                        th:if="${!@permisos.puedeAccederChat(grupo.idGrupo)}">
+                                        <i class="bi bi-lock me-2"></i>
+                                        Debes unirte al grupo para acceder al chat
+                                    </div>
+                                </div>
 
-                                                <!-- Chat Input -->
-                <div class="p-3 border-top bg-white" th:if="${@permisos.puedeEnviarMensajes(grupo.idGrupo)}" style="flex-shrink: 0;">
-                    <div class="input-group mb-2">
-                        <input type="text" id="chatInput" class="form-control"
-                            placeholder="Escribe un mensaje...">
-                        <button id="sendBtn" class="btn btn-primary" type="button">
-                            <i class="bi bi-send"></i>
-                        </button>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <input type="file" id="imageInput" class="form-control" accept="image/*" style="display: none;">
-                        <button id="imageBtn" class="btn btn-outline-secondary btn-sm me-2" type="button">
-                            <i class="bi bi-image"></i> Enviar imagen
-                        </button>
-                        <small class="text-muted">Envía mensajes y fotos del viaje</small>
-                    </div>
-                </div>
+                                <!-- Chat Input -->
+                                <div class="p-3 border-top bg-white"
+                                    th:if="${@permisos.puedeEnviarMensajes(grupo.idGrupo)}" style="flex-shrink: 0;">
+                                    <div class="input-group mb-2">
+                                        <input type="text" id="chatInput" class="form-control"
+                                            placeholder="Escribe un mensaje...">
+                                        <button id="sendBtn" class="btn btn-primary" type="button">
+                                            <i class="bi bi-send"></i>
+                                        </button>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <input type="file" id="imageInput" class="form-control" accept="image/*"
+                                            style="display: none;">
+                                        <button id="imageBtn" class="btn btn-outline-secondary btn-sm me-2"
+                                            type="button">
+                                            <i class="bi bi-image"></i> Enviar imagen
+                                        </button>
+                                        <small class="text-muted">Envía mensajes y fotos del viaje</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -601,8 +631,9 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Estás a punto de eliminar el grupo <strong th:text="${grupo.nombreViaje}">Nombre del Grupo</strong>.</p>
-                    
+                    <p>Estás a punto de eliminar el grupo <strong th:text="${grupo.nombreViaje}">Nombre del
+                            Grupo</strong>.</p>
+
                     <div class="alert alert-danger d-flex align-items-start mb-3">
                         <i class="bi bi-exclamation-triangle me-2 mt-1"></i>
                         <div>
@@ -623,8 +654,7 @@
                         <label for="deleteConfirmText" class="form-label">
                             Para confirmar, escribe "<strong>ELIMINAR</strong>" en el siguiente campo:
                         </label>
-                        <input type="text" class="form-control" id="deleteConfirmText" 
-                               placeholder="Escribe ELIMINAR">
+                        <input type="text" class="form-control" id="deleteConfirmText" placeholder="Escribe ELIMINAR">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -649,13 +679,15 @@
                 </div>
                 <div class="modal-body">
                     <p>Asignar un rol descriptivo a <strong id="roleAssignMemberName">Nombre del miembro</strong></p>
-                    
+
                     <div class="alert alert-info d-flex align-items-start mb-3">
                         <i class="bi bi-info-circle me-2 mt-1"></i>
-                        <span>Los roles son solo descriptivos para organizar mejor el viaje. No afectan los permisos del sistema.</span>
+                        <span>Los roles son solo descriptivos para organizar mejor el viaje. No afectan los permisos del
+                            sistema.</span>
                     </div>
 
-                    <form id="assignRoleForm" th:action="@{/grupos/{id}/asignar-rol(id=${grupo.idGrupo})}" method="post">
+                    <form id="assignRoleForm" th:action="@{/grupos/{id}/asignar-rol(id=${grupo.idGrupo})}"
+                        method="post">
                         <input type="hidden" id="roleAssignUserId" name="userId" value="">
 
                         <div class="mb-3">
@@ -784,7 +816,7 @@
             // Botón cerrar viaje
             const closeGroupBtn = document.getElementById('closeGroupBtn');
             if (closeGroupBtn) {
-                closeGroupBtn.addEventListener('click', function() {
+                closeGroupBtn.addEventListener('click', function () {
                     mostrarConfirmacion('¿Estás seguro de que quieres cerrar este viaje? Esta acción no se puede deshacer y habilitará las calificaciones.', (confirmado) => {
                         if (confirmado) {
                             fetch(`/chat/grupo/${grupoId}/cerrar`, {
@@ -793,19 +825,19 @@
                                     'Content-Type': 'application/json',
                                 }
                             })
-                            .then(response => response.text())
-                            .then(data => {
-                                if (data.includes('éxito') || data.includes('cerrado')) {
-                                    mostrarMensajeExito('Viaje cerrado exitosamente');
-                                    setTimeout(() => location.reload(), 1500);
-                                } else {
-                                    mostrarMensajeError('Error al cerrar el viaje: ' + data);
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                mostrarMensajeError('Error al cerrar el viaje');
-                            });
+                                .then(response => response.text())
+                                .then(data => {
+                                    if (data.includes('éxito') || data.includes('cerrado')) {
+                                        mostrarMensajeExito('Viaje cerrado exitosamente');
+                                        setTimeout(() => location.reload(), 1500);
+                                    } else {
+                                        mostrarMensajeError('Error al cerrar el viaje: ' + data);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    mostrarMensajeError('Error al cerrar el viaje');
+                                });
                         }
                     });
                 });
@@ -824,7 +856,7 @@
 
             // Cargar mensajes al iniciar
             loadMessages();
-            
+
             // Configurar WebSocket para chat en tiempo real
             setupWebSocketChat();
 
@@ -840,43 +872,43 @@
                     method: 'POST',
                     body: formData
                 })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.text().then(text => {
-                            throw new Error(text || 'Error del servidor');
-                        });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.idMensaje) {
-                        chatInput.value = '';
-                        // No necesitamos recargar todos los mensajes, WebSocket se encarga
-                    } else {
-                        mostrarMensajeError('No se pudo enviar el mensaje');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    mostrarMensajeError(error.message || 'Error al enviar mensaje');
-                });
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                throw new Error(text || 'Error del servidor');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.idMensaje) {
+                            chatInput.value = '';
+                            // No necesitamos recargar todos los mensajes, WebSocket se encarga
+                        } else {
+                            mostrarMensajeError('No se pudo enviar el mensaje');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        mostrarMensajeError(error.message || 'Error al enviar mensaje');
+                    });
             }
 
             // Eventos
             sendBtn.addEventListener('click', sendMessage);
-            chatInput.addEventListener('keypress', function(e) {
+            chatInput.addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
                     sendMessage();
                 }
             });
 
             // Botón de imagen
-            imageBtn.addEventListener('click', function() {
+            imageBtn.addEventListener('click', function () {
                 imageInput.click();
             });
 
             // Enviar imagen
-            imageInput.addEventListener('change', function(e) {
+            imageInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 if (!file) return;
 
@@ -909,42 +941,42 @@
                     },
                     body: formData
                 })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.text().then(text => {
-                            throw new Error(text || 'Error del servidor');
-                        });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.idMensaje) {
-                        imageInput.value = '';
-                        // No necesitamos recargar todos los mensajes, WebSocket se encarga
-                    } else {
-                        mostrarMensajeError('No se pudo enviar la imagen');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    mostrarMensajeError(error.message || 'Error al enviar imagen');
-                });
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                throw new Error(text || 'Error del servidor');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.idMensaje) {
+                            imageInput.value = '';
+                            // No necesitamos recargar todos los mensajes, WebSocket se encarga
+                        } else {
+                            mostrarMensajeError('No se pudo enviar la imagen');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        mostrarMensajeError(error.message || 'Error al enviar imagen');
+                    });
             });
 
             // Configurar WebSocket para mensajes en tiempo real
             function setupWebSocketChat() {
                 const socket = new SockJS('/ws');
                 const stompClient = Stomp.over(socket);
-                
+
                 stompClient.connect({}, function (frame) {
                     console.log('Connected: ' + frame);
-                    
+
                     // Suscribirse al canal del grupo para recibir mensajes en tiempo real
                     stompClient.subscribe('/topic/grupo/' + grupoId, function (message) {
                         const nuevoMensaje = JSON.parse(message.body);
                         appendMessage(nuevoMensaje);
                     });
-                    
+
                     // Suscribirse al canal de eliminación de mensajes
                     stompClient.subscribe('/topic/grupo/' + grupoId + '/delete', function (message) {
                         const idMensajeEliminado = JSON.parse(message.body);
@@ -956,12 +988,12 @@
                     console.log('Chat funcionará solo con WebSocket cuando se reconecte');
                 });
             }
-            
+
             // Función para agregar un solo mensaje al chat
             function appendMessage(mensaje) {
                 const chatMessages = document.getElementById('chatMessages');
                 const messageDiv = document.createElement('div');
-                
+
                 const currentUserId = /*[[${usuarioId}]]*/ null;
                 const isCurrentUser = mensaje.remitente && mensaje.remitente.idUsuario === currentUserId;
 
@@ -988,10 +1020,10 @@
                                     <strong>Tú</strong>
                                 </div>
                                 <div class="message-content bg-primary text-white p-3 rounded-3">
-                                    ${mensaje.tipoMensaje === 'imagen' ? 
-                                        `<img src="${mensaje.archivoUrl}" class="img-fluid rounded mb-2" style="max-width: 250px;">
-                                         ${mensaje.mensaje !== 'Imagen compartida' ? `<p class="mb-0">${mensaje.mensaje}</p>` : ''}` : 
-                                        `<p class="mb-0">${mensaje.mensaje}</p>`}
+                                    ${mensaje.tipoMensaje === 'imagen' ?
+                            `<img src="${mensaje.archivoUrl}" class="img-fluid rounded mb-2" style="max-width: 250px;">
+                                         ${mensaje.mensaje !== 'Imagen compartida' ? `<p class="mb-0">${mensaje.mensaje}</p>` : ''}` :
+                            `<p class="mb-0">${mensaje.mensaje}</p>`}
                                 </div>
                             </div>
                         </div>
@@ -1011,10 +1043,10 @@
                                 <small class="text-muted">${formatDate(mensaje.fechaEnvio)}</small>
                             </div>
                             <div class="message-content bg-light p-3 rounded-3">
-                                ${mensaje.tipoMensaje === 'imagen' ? 
-                                    `<img src="${mensaje.archivoUrl}" class="img-fluid rounded mb-2" style="max-width: 250px;">
-                                     ${mensaje.mensaje !== 'Imagen compartida' ? `<p class="mb-0">${mensaje.mensaje}</p>` : ''}` : 
-                                    `<p class="mb-0">${mensaje.mensaje}</p>`}
+                                ${mensaje.tipoMensaje === 'imagen' ?
+                            `<img src="${mensaje.archivoUrl}" class="img-fluid rounded mb-2" style="max-width: 250px;">
+                                     ${mensaje.mensaje !== 'Imagen compartida' ? `<p class="mb-0">${mensaje.mensaje}</p>` : ''}` :
+                            `<p class="mb-0">${mensaje.mensaje}</p>`}
                             </div>
                         </div>
                     `;
@@ -1042,9 +1074,9 @@
             if (!Array.isArray(mensajes)) return;
 
             chatMessages.innerHTML = '';
-            
+
             const currentUserId = /*[[${usuarioId}]]*/ null;
-            
+
             mensajes.forEach(mensaje => {
                 const messageDiv = document.createElement('div');
                 const isCurrentUser = mensaje.remitente && mensaje.remitente.idUsuario === currentUserId;
@@ -1072,10 +1104,10 @@
                                     <strong>Tú</strong>
                                 </div>
                                 <div class="message-content bg-primary text-white p-3 rounded-3">
-                                    ${mensaje.tipoMensaje === 'imagen' ? 
-                                        `<img src="${mensaje.archivoUrl}" class="img-fluid rounded mb-2" style="max-width: 250px;">
-                                         ${mensaje.mensaje !== 'Imagen compartida' ? `<p class="mb-0">${mensaje.mensaje}</p>` : ''}` : 
-                                        `<p class="mb-0">${mensaje.mensaje}</p>`}
+                                    ${mensaje.tipoMensaje === 'imagen' ?
+                            `<img src="${mensaje.archivoUrl}" class="img-fluid rounded mb-2" style="max-width: 250px;">
+                                         ${mensaje.mensaje !== 'Imagen compartida' ? `<p class="mb-0">${mensaje.mensaje}</p>` : ''}` :
+                            `<p class="mb-0">${mensaje.mensaje}</p>`}
                                 </div>
                             </div>
                         </div>
@@ -1095,10 +1127,10 @@
                                 <small class="text-muted">${formatDate(mensaje.fechaEnvio)}</small>
                             </div>
                             <div class="message-content bg-light p-3 rounded-3">
-                                ${mensaje.tipoMensaje === 'imagen' ? 
-                                    `<img src="${mensaje.archivoUrl}" class="img-fluid rounded mb-2" style="max-width: 250px;">
-                                     ${mensaje.mensaje !== 'Imagen compartida' ? `<p class="mb-0">${mensaje.mensaje}</p>` : ''}` : 
-                                    `<p class="mb-0">${mensaje.mensaje}</p>`}
+                                ${mensaje.tipoMensaje === 'imagen' ?
+                            `<img src="${mensaje.archivoUrl}" class="img-fluid rounded mb-2" style="max-width: 250px;">
+                                     ${mensaje.mensaje !== 'Imagen compartida' ? `<p class="mb-0">${mensaje.mensaje}</p>` : ''}` :
+                            `<p class="mb-0">${mensaje.mensaje}</p>`}
                             </div>
                         </div>
                     `;
@@ -1109,7 +1141,7 @@
 
             // Configurar eventos de eliminar después de cargar todos los mensajes
             setupDeleteButtons();
-            
+
             // Scroll al final
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
@@ -1127,7 +1159,7 @@
         // Función para configurar los eventos de eliminar mensaje
         function setupDeleteButtons() {
             document.querySelectorAll('.delete-message-btn').forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', function () {
                     const messageId = this.getAttribute('data-message-id');
                     if (confirm('¿Estás seguro de que quieres eliminar este mensaje?')) {
                         deleteMessage(messageId);
@@ -1144,19 +1176,19 @@
                     'Content-Type': 'application/json',
                 }
             })
-            .then(response => response.text())
-            .then(data => {
-                if (data.includes('exitosamente')) {
-                    // El mensaje se eliminará automáticamente via WebSocket
-                    console.log('Mensaje eliminado exitosamente');
-                } else {
-                    alert('Error al eliminar mensaje: ' + data);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al eliminar mensaje');
-            });
+                .then(response => response.text())
+                .then(data => {
+                    if (data.includes('exitosamente')) {
+                        // El mensaje se eliminará automáticamente via WebSocket
+                        console.log('Mensaje eliminado exitosamente');
+                    } else {
+                        alert('Error al eliminar mensaje: ' + data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al eliminar mensaje');
+                });
         }
 
         // Función para remover un mensaje del DOM cuando se elimina via WebSocket
@@ -1238,7 +1270,7 @@
 
                     document.getElementById('roleAssignUserId').value = userId;
                     document.getElementById('roleAssignMemberName').textContent = userName;
-                    
+
                     // Limpiar formulario
                     document.getElementById('roleSelect').value = '';
                     document.getElementById('roleNotes').value = '';
@@ -1259,13 +1291,13 @@
             const deleteGroupModal = document.getElementById('deleteGroupModal');
             const deleteConfirmText = document.getElementById('deleteConfirmText');
             const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-            
+
             if (deleteGroupModal && deleteConfirmText && confirmDeleteBtn) {
                 // Validar texto de confirmación
-                deleteConfirmText.addEventListener('input', function() {
+                deleteConfirmText.addEventListener('input', function () {
                     const isValid = this.value.trim().toUpperCase() === 'ELIMINAR';
                     confirmDeleteBtn.disabled = !isValid;
-                    
+
                     if (isValid) {
                         confirmDeleteBtn.classList.remove('btn-danger');
                         confirmDeleteBtn.classList.add('btn-danger');
@@ -1273,14 +1305,14 @@
                 });
 
                 // Limpiar modal al cerrarse
-                deleteGroupModal.addEventListener('hidden.bs.modal', function() {
+                deleteGroupModal.addEventListener('hidden.bs.modal', function () {
                     deleteConfirmText.value = '';
                     confirmDeleteBtn.disabled = true;
                     document.getElementById('deleteGroupInfo').classList.add('d-none');
                 });
 
                 // Confirmar eliminación
-                confirmDeleteBtn.addEventListener('click', function() {
+                confirmDeleteBtn.addEventListener('click', function () {
                     if (deleteConfirmText.value.trim().toUpperCase() !== 'ELIMINAR') {
                         mostrarMensajeError('Debes escribir "ELIMINAR" para confirmar');
                         return;
@@ -1293,7 +1325,7 @@
                     // Realizar petición de eliminación
                     const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
                     const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
-                    
+
                     fetch(`/grupos/${grupoId}`, {
                         method: 'DELETE',
                         headers: {
@@ -1301,26 +1333,26 @@
                             [csrfHeader]: csrfToken
                         }
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Éxito - redirigir
-                            mostrarMensajeExito(data.mensaje || 'Grupo eliminado exitosamente');
-                            setTimeout(() => window.location.href = '/grupos/mis-viajes', 1500);
-                        } else if (data.requiereVotacion) {
-                            // Requiere votación
-                            showVotationInfo(data);
-                        } else {
-                            // Error
-                            mostrarMensajeError(data.error || 'Error al eliminar el grupo');
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Éxito - redirigir
+                                mostrarMensajeExito(data.mensaje || 'Grupo eliminado exitosamente');
+                                setTimeout(() => window.location.href = '/grupos/mis-viajes', 1500);
+                            } else if (data.requiereVotacion) {
+                                // Requiere votación
+                                showVotationInfo(data);
+                            } else {
+                                // Error
+                                mostrarMensajeError(data.error || 'Error al eliminar el grupo');
+                                resetDeleteButton();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            mostrarMensajeError('Error de conexión al eliminar el grupo');
                             resetDeleteButton();
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        mostrarMensajeError('Error de conexión al eliminar el grupo');
-                        resetDeleteButton();
-                    });
+                        });
                 });
 
                 function resetDeleteButton() {
@@ -1368,7 +1400,7 @@
                 </div>
             `;
             document.body.appendChild(alertContainer);
-            
+
             // Auto-remover después de 5 segundos
             setTimeout(() => {
                 const alert = alertContainer.querySelector('.alert');
@@ -1395,7 +1427,7 @@
                 </div>
             `;
             document.body.appendChild(alertContainer);
-            
+
             // Auto-remover después de 5 segundos
             setTimeout(() => {
                 const alert = alertContainer.querySelector('.alert');
@@ -1440,16 +1472,16 @@
                 </div>
             `;
             document.body.appendChild(modal);
-            
+
             const bootstrapModal = new bootstrap.Modal(modal.querySelector('.modal'));
             bootstrapModal.show();
-            
+
             // Manejar confirmación
             modal.querySelector('#confirmBtn').addEventListener('click', () => {
                 bootstrapModal.hide();
                 callback(true);
             });
-            
+
             // Limpiar al cerrar
             modal.addEventListener('hidden.bs.modal', () => {
                 modal.remove();
