@@ -528,26 +528,39 @@ document.addEventListener('DOMContentLoaded', function() {
     const edadMaxDisplay = document.getElementById('edad-max-display');
     
     if (rangoEdadMin && rangoEdadMax && edadMinDisplay && edadMaxDisplay) {
-        rangoEdadMin.addEventListener('input', function() {
-            edadMinDisplay.textContent = this.value;
-            if (parseInt(this.value) > parseInt(rangoEdadMax.value)) {
+        function validarEdades() {
+            // Validar edad mínima
+            if (parseInt(rangoEdadMin.value) < 0) {
+                rangoEdadMin.value = 18;
+                showNotification('warning', 'Edad inválida', 'La edad mínima no puede ser negativa');
+            }
+            // Validar edad máxima
+            if (parseInt(rangoEdadMax.value) < 0) {
+                rangoEdadMax.value = 18;
+                showNotification('warning', 'Edad inválida', 'La edad máxima no puede ser negativa');
+            }
+            // Validar relación entre edades
+            if (parseInt(rangoEdadMin.value) > parseInt(rangoEdadMax.value)) {
                 showNotification('warning', 'Rango de edad inválido', 'La edad mínima no puede ser mayor a la edad máxima');
             }
-            if (!isEditMode) {
-                validateInfoTabRealTime();
-            }
-        });
-        
-        rangoEdadMax.addEventListener('input', function() {
-            edadMaxDisplay.textContent = this.value;
-            if (parseInt(this.value) < parseInt(rangoEdadMin.value)) {
+            if (parseInt(rangoEdadMax.value) < parseInt(rangoEdadMin.value)) {
                 showNotification('warning', 'Rango de edad inválido', 'La edad máxima no puede ser menor a la edad mínima');
             }
+        }
+        rangoEdadMin.addEventListener('input', function() {
+            edadMinDisplay.textContent = this.value;
             if (!isEditMode) {
                 validateInfoTabRealTime();
             }
         });
-        
+        rangoEdadMax.addEventListener('input', function() {
+            edadMaxDisplay.textContent = this.value;
+            if (!isEditMode) {
+                validateInfoTabRealTime();
+            }
+        });
+        rangoEdadMin.addEventListener('blur', validarEdades);
+        rangoEdadMax.addEventListener('blur', validarEdades);
         // Inicializar valores
         edadMinDisplay.textContent = rangoEdadMin.value || '18';
         edadMaxDisplay.textContent = rangoEdadMax.value || '60';
