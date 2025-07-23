@@ -91,4 +91,4 @@ public class CustomErrorController implements ErrorController {
         model.addAttribute("errorType", "generic");
         return "error/generic";
     }
-} 
+}

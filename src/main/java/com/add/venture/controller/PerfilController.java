@@ -134,6 +134,16 @@ public class PerfilController {
     public String mostrarVistaConfiguracion(Model model) {
         usuarioHelper.cargarDatosUsuarioParaNavbar(model);
         usuarioHelper.cargarUsuarioParaPerfil(model);
+
+        // Cargar reseñas y logros igual que en /perfil
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            Usuario usuario = usuarioRepository.findByEmail(auth.getName()).orElse(null);
+            if (usuario != null) {
+                cargarDatosResenasParaPerfil(usuario, model);
+            }
+        }
+
         return "user/configuracion";
     }
 

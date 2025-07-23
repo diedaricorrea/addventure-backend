@@ -50,8 +50,25 @@
                     <div class="card mt-4 shadow-sm">
                         <div class="card-body">
                             <h5 class="fw-medium mb-2">Estado de tu cuenta</h5>
-                            <div id="verification-status">
-                                <!-- Will be filled by JavaScript -->
+                            <div>
+                                <span th:if="${logrosUsuario != null && !#lists.isEmpty(logrosUsuario.?[logro.nombre == 'Verificado'])}" class="badge bg-success d-flex align-items-center gap-1">
+                                    <i class="bi bi-shield-check-fill"></i> Cuenta verificada
+                                </span>
+                                <span th:if="${logrosUsuario == null || #lists.isEmpty(logrosUsuario.?[logro.nombre == 'Verificado'])}" class="badge bg-warning d-flex align-items-center gap-1">
+                                    <i class="bi bi-shield"></i> Cuenta no verificada
+                                </span>
+                                <span class="ms-2">
+                                    <i class="bi bi-star"></i>
+                                    <span th:text="${totalResenas ?: 0}">0</span> reseñas positivas
+                                </span>
+                                <span th:if="${logrosUsuario == null || #lists.isEmpty(logrosUsuario.?[logro.nombre == 'Verificado'])}" class="ms-2 text-muted">
+                                    <span th:if="${totalResenas < 5}">
+                                        Te faltan <span th:text="${5 - totalResenas}">5</span> reseñas para la verificación
+                                    </span>
+                                    <span th:if="${totalResenas >= 5}">
+                                        ¡Ya puedes obtener la verificación! (espera la próxima actualización)
+                                    </span>
+                                </span>
                             </div>
                         </div>
                     </div>
