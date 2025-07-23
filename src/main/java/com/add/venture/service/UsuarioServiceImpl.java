@@ -201,4 +201,9 @@ public class UsuarioServiceImpl implements IUsuarioService {
     public boolean existeNombreUsuarioExceptoActual(String nombreUsuario, String emailActual) {
         return usuarioRepository.existsByNombreUsuarioAndEmailNot(nombreUsuario, emailActual);
     }
+
+    @Override
+    public boolean existeTelefono(String telefono) {
+        return usuarioRepository.existsByTelefono(telefono);
+    }
 }

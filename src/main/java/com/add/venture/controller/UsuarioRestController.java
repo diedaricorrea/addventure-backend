@@ -23,6 +23,12 @@ public class UsuarioRestController {
         return ResponseEntity.ok(existe);
     }
 
+    @GetMapping("/existe-telefono")
+    public ResponseEntity<Boolean> verificarTelefono(@RequestParam String telefono) {
+        boolean existe = usuarioService.existeTelefono(telefono);
+        return ResponseEntity.ok(existe);
+    }
+
     @GetMapping("/validar-username-edicion")
     public ResponseEntity<Boolean> validarUsernameEnEdicion(
             @RequestParam String username,

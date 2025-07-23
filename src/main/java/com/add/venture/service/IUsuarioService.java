@@ -68,5 +68,13 @@ public interface IUsuarioService {
      * @param imagenPortada la imagen de portada a subir
      */
     void actualizarPerfil(PerfilUsuarioDTO dto, MultipartFile imagenPerfil, MultipartFile imagenPortada);
+
+    /**
+     * Verifica si un teléfono ya existe en la base de datos.
+     *
+     * @param telefono el teléfono a verificar
+     * @return true si el teléfono ya existe, false en caso contrario
+     */
+    boolean existeTelefono(String telefono);
 }
 

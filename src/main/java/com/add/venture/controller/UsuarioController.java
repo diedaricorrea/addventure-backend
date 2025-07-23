@@ -42,6 +42,12 @@ public class UsuarioController {
             return "auth/registrarse";
         }
 
+        // Validar si el teléfono ya existe
+        if (usuarioService.existeTelefono(dto.getTelefono())) {
+            model.addAttribute("error", "El teléfono ya está en uso");
+            return "auth/registrarse";
+        }
+
         // Si todo está bien, crear el usuario
         usuarioService.crearUsuario(dto);
         redirectAttributes.addFlashAttribute("mensaje", "Registro exitoso");

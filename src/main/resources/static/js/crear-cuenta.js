@@ -2,6 +2,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // === REFERENCIA BOTON PASO 1 ===
     const botonSiguiente = document.getElementById('step-1-next');
 
+    const telefonoInput = document.getElementById('telefono');
+    const advertenciaTelefono = document.getElementById('advertencia-telefono');
+    const telefonoStatus = document.getElementById('telefono-status');
+
     // === Mostrar/ocultar contraseña ===
     const togglePassword = document.getElementById("toggle-password");
     const passwordInput = document.getElementById("password");
@@ -103,6 +107,42 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    // === Verificación de teléfono ===
+    // Evento input para verificación en tiempo real
+    telefonoInput.addEventListener('input', () => {
+        const numero = telefonoInput.value.trim();
+
+        if (numero.length === 9 && /^[679]\d{8}$/.test(numero)) {
+            // Si cumple con 9 dígitos y empieza en 6,7,9
+
+            fetch(`/api/usuarios/existe-telefono?telefono=${encodeURIComponent(numero)}`)
+                .then(response => response.json())
+                .then(existe => {
+                    if (!existe) {
+                        telefonoStatus.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
+                        advertenciaTelefono.style.display = "none";
+                        botonSiguiente.disabled = false;
+                    } else {
+                        telefonoStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
+                        advertenciaTelefono.style.display = "block";
+                        botonSiguiente.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error al verificar teléfono:", error);
+                    telefonoStatus.innerHTML = '<i class="fas fa-times-circle text-warning"></i>';
+                    advertenciaTelefono.style.display = "none";
+                });
+
+        } else {
+            // Si no cumple formato
+            telefonoStatus.innerHTML = "";
+            advertenciaTelefono.style.display = "block";
+            botonSiguiente.disabled = true;
+        }
+    });
+
+
     // === Configurar rango válido para fecha de nacimiento (edad 18-35 años) ===
     const fechaInput = document.getElementById('fechaNacimiento');
     if (fechaInput) {
@@ -122,9 +162,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // === Validación del teléfono ===
-    const telefonoInput = document.getElementById('telefono');
-    const advertenciaTelefono = document.getElementById('advertencia-telefono');
-    const telefonoStatus = document.getElementById('telefono-status');
     telefonoInput.addEventListener('input', function () {
         const numero = this.value.trim();
         if (numero.length >= 9) {
