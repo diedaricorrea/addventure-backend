@@ -43,9 +43,6 @@ public class CrearGrupoController {
             model.addAttribute("datosViaje", new CrearGrupoViajeDTO());
         }
 
-        // Cargar tipos de viaje para el selector
-        model.addAttribute("tiposViaje", grupoViajeService.obtenerTiposViaje());
-
         return "grupos/crear";
     }
 
@@ -63,9 +60,6 @@ public class CrearGrupoController {
             // Cargar datos del usuario para la navbar y perfil
             usuarioAutenticadoHelper.cargarDatosUsuarioParaNavbar(model);
             usuarioAutenticadoHelper.cargarUsuarioParaPerfil(model);
-
-            // Cargar tipos de viaje para el selector
-            model.addAttribute("tiposViaje", grupoViajeService.obtenerTiposViaje());
 
             // Agregar mensaje de error general
             model.addAttribute("error", "Por favor corrige los errores del formulario antes de continuar.");
@@ -86,9 +80,6 @@ public class CrearGrupoController {
             // Cargar datos del usuario para la navbar y perfil
             usuarioAutenticadoHelper.cargarDatosUsuarioParaNavbar(model);
             usuarioAutenticadoHelper.cargarUsuarioParaPerfil(model);
-
-            // Cargar tipos de viaje para el selector
-            model.addAttribute("tiposViaje", grupoViajeService.obtenerTiposViaje());
 
             return "grupos/crear";
         }

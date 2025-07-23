@@ -69,12 +69,6 @@ public class Viaje {
     // Relaciones
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    @ManyToOne
-    @JoinColumn(name = "id_tipo")
-    private TipoViaje tipo;
-
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
     @OneToOne(mappedBy = "viaje", cascade = CascadeType.ALL)
     private GrupoViaje grupo;
 }

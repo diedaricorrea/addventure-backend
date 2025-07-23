@@ -109,7 +109,6 @@ public class GrupoViajeController {
             @RequestParam(required = false) String destino,
             @RequestParam(required = false) String fechaInicio,
             @RequestParam(required = false) String fechaFin,
-            @RequestParam(required = false) Long tipoViaje,
             @RequestParam(required = false) String rangoEdad,
             @RequestParam(required = false) Boolean verificado,
             @RequestParam(required = false) String etiquetas,
@@ -144,9 +143,6 @@ public class GrupoViajeController {
         }
         
         model.addAttribute("grupos", gruposConCupo);
-
-        // Cargar tipos de viaje para los filtros
-        model.addAttribute("tiposViaje", grupoViajeService.obtenerTiposViaje());
 
         return "grupos/buscar";
     }
@@ -773,8 +769,6 @@ public class GrupoViajeController {
             model.addAttribute("totalGrupos", gruposCreados.size() + gruposUnidos.size());
         }
 
-        model.addAttribute("tiposViaje", grupoViajeService.obtenerTiposViaje());
-
         return "grupos/mis-viajes";
     }
 
@@ -819,9 +813,6 @@ public class GrupoViajeController {
             dto.setImagenDestacada(grupo.getViaje().getImagenDestacada());
             dto.setRangoEdadMin(grupo.getViaje().getRangoEdadMin());
             dto.setRangoEdadMax(grupo.getViaje().getRangoEdadMax());
-            if (grupo.getViaje().getTipo() != null) {
-                dto.setIdTipoViaje(grupo.getViaje().getTipo().getIdTipo());
-            }
         }
 
         // Cargar etiquetas

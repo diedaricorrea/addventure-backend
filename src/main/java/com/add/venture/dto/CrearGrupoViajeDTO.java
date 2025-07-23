@@ -62,8 +62,6 @@ public class CrearGrupoViajeDTO {
     @Max(value = 80, message = "La edad máxima no puede ser mayor a 80 años")
     private Integer rangoEdadMax = 60;
     
-    private Long idTipoViaje;
-    
     @NotNull(message = "El número máximo de participantes es obligatorio")
     @Min(value = 2, message = "Debe haber al menos 2 participantes")
     @Max(value = 20, message = "No puede haber más de 20 participantes")

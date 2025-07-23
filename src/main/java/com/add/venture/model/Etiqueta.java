@@ -35,10 +35,5 @@ public class Etiqueta {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToMany(mappedBy = "etiquetas")
-    private Set<Usuario> usuarios;
-
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    @ManyToMany(mappedBy = "etiquetas")
     private Set<GrupoViaje> grupos;
 }

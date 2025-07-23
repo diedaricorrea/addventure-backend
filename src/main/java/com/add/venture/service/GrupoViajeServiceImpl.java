@@ -27,14 +27,12 @@ import com.add.venture.model.Etiqueta;
 import com.add.venture.model.GrupoViaje;
 import com.add.venture.model.Itinerario;
 import com.add.venture.model.ParticipanteGrupo;
-import com.add.venture.model.TipoViaje;
 import com.add.venture.model.Usuario;
 import com.add.venture.model.Viaje;
 import com.add.venture.model.ParticipanteGrupo.EstadoSolicitud;
 import com.add.venture.repository.EtiquetaRepository;
 import com.add.venture.repository.GrupoViajeRepository;
 import com.add.venture.repository.ItinerarioRepository;
-import com.add.venture.repository.TipoViajeRepository;
 import com.add.venture.repository.UsuarioRepository;
 import com.add.venture.repository.ViajeRepository;
 
@@ -49,9 +47,6 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private TipoViajeRepository tipoViajeRepository;
 
     @Autowired
     private EtiquetaRepository etiquetaRepository;
@@ -89,13 +84,6 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
         viaje.setFechaCreacion(LocalDateTime.now());
         viaje.setEsVerificado(false);
         viaje.setEstado("activo");
-
-        // Asignar tipo de viaje si se especificó
-        if (dto.getIdTipoViaje() != null) {
-            TipoViaje tipoViaje = tipoViajeRepository.findById(dto.getIdTipoViaje())
-                    .orElseThrow(() -> new RuntimeException("Tipo de viaje no encontrado"));
-            viaje.setTipo(tipoViaje);
-        }
 
         // Guardar el viaje
         viaje = viajeRepository.save(viaje);
@@ -181,11 +169,6 @@ public class GrupoViajeServiceImpl implements IGrupoViajeService {
     @Override
     public boolean viajeYaAsignado(Long idViaje) {
         return grupoViajeRepository.existsByViajeIdViaje(idViaje);
-    }
-
-    @Override
-    public List<TipoViaje> obtenerTiposViaje() {
-        return tipoViajeRepository.findAll();
     }
 
     @Override

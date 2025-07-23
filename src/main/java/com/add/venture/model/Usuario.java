@@ -92,13 +92,6 @@ public class Usuario {
     @Column(length = 20)
     private String estado = "activo";
 
-    // Excluir las colecciones que causan referencias circulares
-    @EqualsAndHashCode.Exclude
-    @ManyToMany
-    @JoinTable(name = "UsuarioEtiqueta", joinColumns = @JoinColumn(name = "id_usuario"), inverseJoinColumns = @JoinColumn(name = "id_etiqueta"))
-    @JsonIgnore
-    private Set<Etiqueta> etiquetas;
-
     // Excluir otras colecciones que puedan causar referencias circulares
     @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "creador")

@@ -40,9 +40,6 @@
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <h5 class="card-title fw-bold" th:text="${grupo.nombreViaje}">Nombre del Viaje</h5>
-                <span class="badge bg-light text-dark"
-                    th:if="${grupo.viaje != null && grupo.viaje.tipo != null}"
-                    th:text="${grupo.viaje.tipo.nombreTipo}">TIPO</span>
             </div>
 
             <div class="d-flex align-items-center text-muted mb-2" th:if="${grupo.viaje != null}">
