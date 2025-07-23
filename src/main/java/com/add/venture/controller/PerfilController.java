@@ -28,6 +28,8 @@ import com.add.venture.service.ILogroService;
 import com.add.venture.service.IUsuarioService;
 
 import java.util.List;
+import jakarta.validation.Valid;
+import org.springframework.validation.BindingResult;
 
 @Controller
 @RequestMapping("/perfil")
@@ -149,10 +151,25 @@ public class PerfilController {
 
     @PostMapping("/configuracion")
     public String actualizarConfiguracion(
-            @ModelAttribute("usuario") PerfilUsuarioDTO perfilDto,
+            @Valid @ModelAttribute("usuario") PerfilUsuarioDTO perfilDto,
+            BindingResult result,
             @RequestParam(value = "imagenPerfil", required = false) MultipartFile imagenPerfil,
             @RequestParam(value = "imagenPortada", required = false) MultipartFile imagenPortada,
             Model model) {
+
+        if (result.hasErrors()) {
+            usuarioHelper.cargarDatosUsuarioParaNavbar(model);
+            usuarioHelper.cargarUsuarioParaPerfil(model);
+            // Recargar datos de reseñas y logros igual que en el GET
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+                Usuario usuario = usuarioRepository.findByEmail(auth.getName()).orElse(null);
+                if (usuario != null) {
+                    cargarDatosResenasParaPerfil(usuario, model);
+                }
+            }
+            return "user/configuracion";
+        }
 
         usuarioService.actualizarPerfil(perfilDto, imagenPerfil, imagenPortada);
 

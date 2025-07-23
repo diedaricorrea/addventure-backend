@@ -260,7 +260,12 @@
                                         <div class="mb-3">
                                             <label for="bio" class="form-label">Biografía</label>
                                             <textarea class="form-control" id="bio" rows="4" th:field="*{biografia}"
-                                                placeholder="Cuéntanos sobre ti..."></textarea>
+                                                placeholder="Cuéntanos sobre ti..." maxlength="1000" oninput="document.getElementById('bio-count').textContent = this.value.length"></textarea>
+                                            <div class="d-flex justify-content-between">
+                                                <small id="bio-count" class="text-muted">0</small>
+                                                <small class="text-muted">/ 1000 caracteres</small>
+                                            </div>
+                                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('biografia')}" th:errors="*{biografia}"></div>
                                         </div>
 
                                         <div class="card-footer d-flex justify-content-end">

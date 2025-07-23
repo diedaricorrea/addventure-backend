@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.TextStyle;
 import java.util.Locale;
+import jakarta.validation.constraints.Size;
 
 public class PerfilUsuarioDTO {
     private String nombre;
@@ -15,6 +16,7 @@ public class PerfilUsuarioDTO {
     private String pais;
     private String ciudad;
     private LocalDate fechaNacimiento;
+    @Size(max = 1000, message = "La biografía no puede exceder 1000 caracteres")
     private String biografia;
 
     private String imagenPerfil;
