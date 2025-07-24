@@ -197,13 +197,13 @@
                                                         th:if="${grupo.creador.fotoPerfil == null}"
                                                         th:text="${grupo.creador.iniciales}">OR</div>
                                                 </div>
-                                                <a class="fw-medium text-decoration-none"
+                                                <a class="fw-medium text-black opacity-75 text-decoration-none"
                                                     th:href="@{/perfil/{id}(id=${grupo.creador.idUsuario})}"
                                                     th:text="${grupo.creador.nombre + ' ' + grupo.creador.apellidos}">
                                                     Nombre Organizador
                                                 </a>
 
-                                                <div class="organizer-label">Organizador</div>
+                                                <div class="organizer-label mt-2">Organizador</div>
                                                 <!-- Mostrar rol descriptivo del creador si existe -->
                                                 <div th:if="${creadorRolDescriptivo != null && creadorRolDescriptivo != 'MIEMBRO'}"
                                                     class="mt-1">
@@ -249,7 +249,7 @@
                                                 <!-- Mostrar rol descriptivo si existe -->
                                                 <div th:if="${participante.rolParticipante != null && participante.rolParticipante != 'MIEMBRO'}"
                                                     class="mt-1">
-                                                    <span class="badge bg-info text-white small" th:text="${participante.rolParticipante == 'GUÍA' ? '🗺️ Guía' : 
+                                                    <span class="badge bg-info text-white small mt-2" th:text="${participante.rolParticipante == 'GUÍA' ? '🗺️ Guía' : 
                                                                     participante.rolParticipante == 'COORDINADOR' ? '📋 Coordinador' : 
                                                                     participante.rolParticipante == 'TESORERO' ? '💰 Tesorero' : 
                                                                     participante.rolParticipante == 'FOTOGRAFO' ? '📸 Fotógrafo' : 
@@ -267,41 +267,8 @@
                                                 </div>
 
                                                 <!-- Dropdown para gestión de miembros -->
-                                                <div class="dropdown position-absolute top-0 end-0 me-2 mt-2"
-                                                    th:if="${@permisos.puedeGestionar(grupo.idGrupo, participante.usuario.idUsuario)}">
-                                                    <button class="btn btn-sm btn-light border-0" type="button"
-                                                        data-bs-toggle="dropdown" aria-expanded="false">
-                                                        <i class="bi bi-three-dots-vertical"></i>
-                                                    </button>
-                                                    <ul class="dropdown-menu dropdown-menu-end">
-                                                        <li><a class="dropdown-item"
-                                                                th:href="@{/perfil/{id}(id=${participante.usuario.idUsuario})}">
-                                                                <i class="bi bi-person me-2"></i>Ver perfil</a></li>
-                                                        <li
-                                                            th:if="${@permisos.puedeAsignarRoles(grupo.idGrupo) && grupo.estado == 'activo'}">
-                                                            <a class="dropdown-item" href="#" data-bs-toggle="modal"
-                                                                data-bs-target="#assignRoleModal"
-                                                                th:data-user-id="${participante.usuario.idUsuario}"
-                                                                th:data-user-name="${participante.usuario.nombre + ' ' + participante.usuario.apellidos}">
-                                                                <i class="bi bi-person-gear me-2"></i>Asignar rol
-                                                            </a>
-                                                        </li>
-                                                        <li
-                                                            th:if="${@permisos.puedeExpulsarMiembros(grupo.idGrupo) && grupo.estado == 'activo'}">
-                                                            <a class="dropdown-item text-danger" href="#"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#expelMemberModal"
-                                                                th:data-user-id="${participante.usuario.idUsuario}"
-                                                                th:data-user-name="${participante.usuario.nombre + ' ' + participante.usuario.apellidos}">
-                                                                <i class="bi bi-x-circle me-2"></i>Expulsar del grupo
-                                                            </a>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-
-                                                 <!-- Dropdown para gestión de miembros -->
                                                  <div class="dropdown position-absolute top-0 end-0 me-2 mt-2"
-                                                 th:if="${@permisos.puedeGestionar(grupo.idGrupo, participante.usuario.idUsuario)}">
+                                                 th:if="${isParticipante == true}">
                                                  <button class="btn btn-sm btn-light border-0" type="button"
                                                      data-bs-toggle="dropdown" aria-expanded="false">
                                                      <i class="bi bi-three-dots-vertical"></i>
