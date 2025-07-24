@@ -39,35 +39,35 @@ public class DataLoader implements CommandLineRunner {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
-    
+
     @Autowired
     private GrupoViajeRepository grupoViajeRepository;
-    
+
     @Autowired
     private UsuarioRolGrupoRepository usuarioRolGrupoRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-    
+
     @Autowired
     private ILogroService logroService;
 
     @Override
     public void run(String... args) throws Exception {
         logger.info("Iniciando carga de datos del sistema...");
-        
+
         cargarPermisos();
         cargarRoles();
         cargarUsuariosDePrueba();
         verificarYCorregirRolesFaltantes();
         inicializarLogros();
-        
+
         logger.info("Carga de datos completada.");
     }
 
     private void cargarPermisos() {
         logger.info("Cargando permisos del sistema...");
-        
+
         for (Permiso.PermisosSistema permisoEnum : Permiso.PermisosSistema.values()) {
             if (permisoRepository.findByNombrePermiso(permisoEnum.getNombre()).isEmpty()) {
                 Permiso permiso = Permiso.builder()
@@ -76,95 +76,87 @@ public class DataLoader implements CommandLineRunner {
                         .categoria(permisoEnum.getCategoria())
                         .estado("activo")
                         .build();
-                
+
                 permisoRepository.save(permiso);
                 logger.debug("Permiso creado: {}", permisoEnum.getNombre());
             }
         }
-        
+
         logger.info("Permisos cargados correctamente.");
     }
 
     private void cargarRoles() {
         logger.info("Cargando roles del sistema...");
-        
+
         // Obtener todos los permisos para asignar a los roles
         List<Permiso> todosLosPermisos = permisoRepository.findByEstado("activo");
-        
+
         // ===== ROL: ADMIN_SISTEMA =====
         crearRolSiNoExiste(
-            Rol.RolesSistema.ADMIN_SISTEMA,
-            new HashSet<>(todosLosPermisos) // Admin tiene todos los permisos
+                Rol.RolesSistema.ADMIN_SISTEMA,
+                new HashSet<>(todosLosPermisos) // Admin tiene todos los permisos
         );
-        
+
         // ===== ROL: LIDER_GRUPO =====
         Set<String> permisosLider = Set.of(
-            Permiso.PermisosSistema.EDITAR_GRUPO.getNombre(),
-            Permiso.PermisosSistema.ELIMINAR_GRUPO.getNombre(),
-            Permiso.PermisosSistema.CERRAR_GRUPO.getNombre(),
-            Permiso.PermisosSistema.INVITAR_MIEMBROS.getNombre(),
-            Permiso.PermisosSistema.EXPULSAR_MIEMBROS.getNombre(),
-            Permiso.PermisosSistema.APROBAR_SOLICITUDES.getNombre(),
-            Permiso.PermisosSistema.ASIGNAR_ROLES.getNombre(),
-            Permiso.PermisosSistema.VER_LISTA_MIEMBROS.getNombre(),
-            Permiso.PermisosSistema.ACCEDER_CHAT.getNombre(),
-            Permiso.PermisosSistema.ENVIAR_MENSAJES.getNombre(),
-            Permiso.PermisosSistema.ELIMINAR_MENSAJES.getNombre(),
-            Permiso.PermisosSistema.COMPARTIR_ARCHIVOS.getNombre(),
-            Permiso.PermisosSistema.EDITAR_ITINERARIO.getNombre(),
-            Permiso.PermisosSistema.VER_ITINERARIO.getNombre(),
-            Permiso.PermisosSistema.VER_ESTADISTICAS.getNombre()
-        );
+                Permiso.PermisosSistema.EDITAR_GRUPO.getNombre(),
+                Permiso.PermisosSistema.ELIMINAR_GRUPO.getNombre(),
+                Permiso.PermisosSistema.CERRAR_GRUPO.getNombre(),
+                Permiso.PermisosSistema.INVITAR_MIEMBROS.getNombre(),
+                Permiso.PermisosSistema.EXPULSAR_MIEMBROS.getNombre(),
+                Permiso.PermisosSistema.APROBAR_SOLICITUDES.getNombre(),
+                Permiso.PermisosSistema.ASIGNAR_ROLES.getNombre(),
+                Permiso.PermisosSistema.VER_LISTA_MIEMBROS.getNombre(),
+                Permiso.PermisosSistema.ACCEDER_CHAT.getNombre(),
+                Permiso.PermisosSistema.ENVIAR_MENSAJES.getNombre(),
+                Permiso.PermisosSistema.ELIMINAR_MENSAJES.getNombre(),
+                Permiso.PermisosSistema.COMPARTIR_ARCHIVOS.getNombre(),
+                Permiso.PermisosSistema.EDITAR_ITINERARIO.getNombre(),
+                Permiso.PermisosSistema.VER_ITINERARIO.getNombre(),
+                Permiso.PermisosSistema.VER_ESTADISTICAS.getNombre());
         crearRolSiNoExiste(
-            Rol.RolesSistema.LIDER_GRUPO,
-            obtenerPermisosPorNombres(todosLosPermisos, permisosLider)
-        );
-        
+                Rol.RolesSistema.LIDER_GRUPO,
+                obtenerPermisosPorNombres(todosLosPermisos, permisosLider));
+
         // ===== ROL: CO_LIDER =====
         Set<String> permisosCoLider = Set.of(
-            Permiso.PermisosSistema.INVITAR_MIEMBROS.getNombre(),
-            Permiso.PermisosSistema.APROBAR_SOLICITUDES.getNombre(),
-            Permiso.PermisosSistema.VER_LISTA_MIEMBROS.getNombre(),
-            Permiso.PermisosSistema.ACCEDER_CHAT.getNombre(),
-            Permiso.PermisosSistema.ENVIAR_MENSAJES.getNombre(),
-            Permiso.PermisosSistema.ELIMINAR_MENSAJES.getNombre(),
-            Permiso.PermisosSistema.COMPARTIR_ARCHIVOS.getNombre(),
-            Permiso.PermisosSistema.EDITAR_ITINERARIO.getNombre(),
-            Permiso.PermisosSistema.VER_ITINERARIO.getNombre()
-        );
+                Permiso.PermisosSistema.INVITAR_MIEMBROS.getNombre(),
+                Permiso.PermisosSistema.APROBAR_SOLICITUDES.getNombre(),
+                Permiso.PermisosSistema.VER_LISTA_MIEMBROS.getNombre(),
+                Permiso.PermisosSistema.ACCEDER_CHAT.getNombre(),
+                Permiso.PermisosSistema.ENVIAR_MENSAJES.getNombre(),
+                Permiso.PermisosSistema.ELIMINAR_MENSAJES.getNombre(),
+                Permiso.PermisosSistema.COMPARTIR_ARCHIVOS.getNombre(),
+                Permiso.PermisosSistema.EDITAR_ITINERARIO.getNombre(),
+                Permiso.PermisosSistema.VER_ITINERARIO.getNombre());
         crearRolSiNoExiste(
-            Rol.RolesSistema.CO_LIDER,
-            obtenerPermisosPorNombres(todosLosPermisos, permisosCoLider)
-        );
-        
+                Rol.RolesSistema.CO_LIDER,
+                obtenerPermisosPorNombres(todosLosPermisos, permisosCoLider));
+
         // ===== ROL: MIEMBRO =====
         Set<String> permisosMiembro = Set.of(
-            Permiso.PermisosSistema.VER_LISTA_MIEMBROS.getNombre(),
-            Permiso.PermisosSistema.ACCEDER_CHAT.getNombre(),
-            Permiso.PermisosSistema.ENVIAR_MENSAJES.getNombre(),
-            Permiso.PermisosSistema.COMPARTIR_ARCHIVOS.getNombre(),
-            Permiso.PermisosSistema.VER_ITINERARIO.getNombre()
-        );
+                Permiso.PermisosSistema.VER_LISTA_MIEMBROS.getNombre(),
+                Permiso.PermisosSistema.ACCEDER_CHAT.getNombre(),
+                Permiso.PermisosSistema.ENVIAR_MENSAJES.getNombre(),
+                Permiso.PermisosSistema.COMPARTIR_ARCHIVOS.getNombre(),
+                Permiso.PermisosSistema.VER_ITINERARIO.getNombre());
         crearRolSiNoExiste(
-            Rol.RolesSistema.MIEMBRO,
-            obtenerPermisosPorNombres(todosLosPermisos, permisosMiembro)
-        );
-        
+                Rol.RolesSistema.MIEMBRO,
+                obtenerPermisosPorNombres(todosLosPermisos, permisosMiembro));
+
         // ===== ROL: MIEMBRO_PREMIUM =====
         Set<String> permisosMiembroPremium = Set.of(
-            Permiso.PermisosSistema.INVITAR_MIEMBROS.getNombre(),
-            Permiso.PermisosSistema.VER_LISTA_MIEMBROS.getNombre(),
-            Permiso.PermisosSistema.ACCEDER_CHAT.getNombre(),
-            Permiso.PermisosSistema.ENVIAR_MENSAJES.getNombre(),
-            Permiso.PermisosSistema.COMPARTIR_ARCHIVOS.getNombre(),
-            Permiso.PermisosSistema.EDITAR_ITINERARIO.getNombre(),
-            Permiso.PermisosSistema.VER_ITINERARIO.getNombre()
-        );
+                Permiso.PermisosSistema.INVITAR_MIEMBROS.getNombre(),
+                Permiso.PermisosSistema.VER_LISTA_MIEMBROS.getNombre(),
+                Permiso.PermisosSistema.ACCEDER_CHAT.getNombre(),
+                Permiso.PermisosSistema.ENVIAR_MENSAJES.getNombre(),
+                Permiso.PermisosSistema.COMPARTIR_ARCHIVOS.getNombre(),
+                Permiso.PermisosSistema.EDITAR_ITINERARIO.getNombre(),
+                Permiso.PermisosSistema.VER_ITINERARIO.getNombre());
         crearRolSiNoExiste(
-            Rol.RolesSistema.MIEMBRO_PREMIUM,
-            obtenerPermisosPorNombres(todosLosPermisos, permisosMiembroPremium)
-        );
-        
+                Rol.RolesSistema.MIEMBRO_PREMIUM,
+                obtenerPermisosPorNombres(todosLosPermisos, permisosMiembroPremium));
+
         logger.info("Roles cargados correctamente.");
     }
 
@@ -178,7 +170,7 @@ public class DataLoader implements CommandLineRunner {
                     .estado("activo")
                     .permisos(permisos)
                     .build();
-            
+
             rolRepository.save(rol);
             logger.debug("Rol creado: {} con {} permisos", rolEnum.getNombre(), permisos.size());
         }
@@ -199,7 +191,7 @@ public class DataLoader implements CommandLineRunner {
     // ==========================================
     private void cargarUsuariosDePrueba() {
         logger.info("Cargando usuarios de prueba...");
-        
+
         // USUARIO 1: Administrador de prueba
         if (usuarioRepository.findByEmail("diedari20diez@gmail.com").isEmpty()) {
             Usuario admin = Usuario.builder()
@@ -207,21 +199,20 @@ public class DataLoader implements CommandLineRunner {
                     .apellidos("Administrador")
                     .nombreUsuario("carlos_admin")
                     .email("diedari20diez@gmail.com")
-                    .telefono("+57 300 123 4567")
-                    .pais("Colombia")
-                    .ciudad("Bogotá")
-                    .fechaNacimiento(LocalDate.of(1990, 5, 15))
+                    .telefono("968108776")
+                    .pais("Peru")
+                    .ciudad("Piura")
+                    .fechaNacimiento(LocalDate.of(2005, 5, 06))
                     .contrasenaHash(passwordEncoder.encode("danielunp210"))
                     .esVerificado(true)
                     .estadoCuenta("activa")
                     .estado("activo")
                     .descripcion("Usuario administrador para pruebas del sistema")
                     .build();
-            
+
             usuarioRepository.save(admin);
-            logger.debug("Usuario de prueba creado: admin@addventure.com / admin123");
         }
-        
+
         // USUARIO 2: Usuario regular de prueba
         if (usuarioRepository.findByEmail("maria@addventure.com").isEmpty()) {
             Usuario maria = Usuario.builder()
@@ -229,9 +220,9 @@ public class DataLoader implements CommandLineRunner {
                     .apellidos("Viajera")
                     .nombreUsuario("maria_viajera")
                     .email("maria@addventure.com")
-                    .telefono("+57 310 987 6543")
-                    .pais("Colombia")
-                    .ciudad("Medellín")
+                    .telefono("956786757")
+                    .pais("Talara")
+                    .ciudad("Peru")
                     .fechaNacimiento(LocalDate.of(1995, 8, 22))
                     .contrasenaHash(passwordEncoder.encode("maria123"))
                     .esVerificado(true)
@@ -239,40 +230,102 @@ public class DataLoader implements CommandLineRunner {
                     .estado("activo")
                     .descripcion("Apasionada por los viajes de aventura y la fotografía")
                     .build();
-            
+
             usuarioRepository.save(maria);
-            logger.debug("Usuario de prueba creado: maria@addventure.com / maria123");
         }
-        
+
+        // USUARIO 3: Viajero de aventura
+        if (usuarioRepository.findByEmail("luis@addventure.com").isEmpty()) {
+            Usuario luis = Usuario.builder()
+                    .nombre("Luis")
+                    .apellidos("Huaman Torres")
+                    .nombreUsuario("luis_explorer")
+                    .email("luis@addventure.com")
+                    .telefono("944556677")
+                    .pais("Peru")
+                    .ciudad("Cusco")
+                    .fechaNacimiento(LocalDate.of(1992, 12, 5))
+                    .contrasenaHash(passwordEncoder.encode("luisexplorer123"))
+                    .esVerificado(true)
+                    .estadoCuenta("activa")
+                    .estado("activo")
+                    .descripcion("Amante del trekking y guía turístico en Cusco")
+                    .build();
+
+            usuarioRepository.save(luis);
+        }
+
+        // USUARIO 4: Viajera mochilera
+        if (usuarioRepository.findByEmail("carla@addventure.com").isEmpty()) {
+            Usuario carla = Usuario.builder()
+                    .nombre("Carla")
+                    .apellidos("Fernandez Salas")
+                    .nombreUsuario("carla_mochilera")
+                    .email("carla@addventure.com")
+                    .telefono("965432189")
+                    .pais("Peru")
+                    .ciudad("Arequipa")
+                    .fechaNacimiento(LocalDate.of(1998, 3, 18))
+                    .contrasenaHash(passwordEncoder.encode("carlamochi123"))
+                    .esVerificado(true)
+                    .estadoCuenta("activa")
+                    .estado("activo")
+                    .descripcion("Mochilera que viaja por el sur del Perú compartiendo sus experiencias")
+                    .build();
+
+            usuarioRepository.save(carla);
+        }
+
+        // USUARIO 5: Blogger de viajes
+        if (usuarioRepository.findByEmail("diego@addventure.com").isEmpty()) {
+            Usuario diego = Usuario.builder()
+                    .nombre("Diego")
+                    .apellidos("Rojas Paredes")
+                    .nombreUsuario("diego_blog")
+                    .email("diego@addventure.com")
+                    .telefono("912345678")
+                    .pais("Peru")
+                    .ciudad("Trujillo")
+                    .fechaNacimiento(LocalDate.of(1994, 11, 30))
+                    .contrasenaHash(passwordEncoder.encode("diegoblog123"))
+                    .esVerificado(true)
+                    .estadoCuenta("activa")
+                    .estado("activo")
+                    .descripcion("Blogger de viajes con enfoque en cultura y gastronomía")
+                    .build();
+
+            usuarioRepository.save(diego);
+        }
+
         logger.info("Usuarios de prueba cargados correctamente.");
         logger.warn("RECORDATORIO: Eliminar usuarios de prueba antes de producción");
     }
     // ==========================================
     // FIN USUARIOS DE PRUEBA
     // ==========================================
-    
+
     private void verificarYCorregirRolesFaltantes() {
         logger.info("🔍 Verificando roles faltantes en grupos existentes...");
-        
+
         try {
             List<GrupoViaje> todosLosGrupos = grupoViajeRepository.findAll();
             Optional<Rol> rolLiderOpt = rolRepository.findByNombreRol("LÍDER_GRUPO");
-            
+
             if (rolLiderOpt.isEmpty()) {
                 logger.warn("⚠️ Rol LÍDER_GRUPO no encontrado, saltando verificación");
                 return;
             }
-            
+
             Rol rolLider = rolLiderOpt.get();
             int rolesAsignados = 0;
-            
+
             for (GrupoViaje grupo : todosLosGrupos) {
                 Usuario creador = grupo.getCreador();
-                
+
                 // Verificar si el creador ya tiene rol asignado
                 Optional<UsuarioRolGrupo> rolExistente = usuarioRolGrupoRepository
                         .findActiveByUsuarioAndGrupo(creador, grupo);
-                
+
                 if (rolExistente.isEmpty()) {
                     // Asignar rol de LÍDER_GRUPO al creador
                     UsuarioRolGrupo nuevoRol = UsuarioRolGrupo.builder()
@@ -282,30 +335,30 @@ public class DataLoader implements CommandLineRunner {
                             .asignadoPor(null) // Auto-asignado por el sistema
                             .estado("activo")
                             .build();
-                    
+
                     usuarioRolGrupoRepository.save(nuevoRol);
                     rolesAsignados++;
-                    
-                    logger.debug("✅ Rol LÍDER_GRUPO asignado a {} en grupo: {}", 
-                               creador.getEmail(), grupo.getNombreViaje());
+
+                    logger.debug("✅ Rol LÍDER_GRUPO asignado a {} en grupo: {}",
+                            creador.getEmail(), grupo.getNombreViaje());
                 }
             }
-            
+
             if (rolesAsignados > 0) {
                 logger.info("🎯 Total roles de líder asignados: {}", rolesAsignados);
             } else {
                 logger.info("✅ Todos los creadores ya tienen sus roles asignados");
             }
-            
+
         } catch (Exception e) {
             logger.error("⚠️ Error al verificar roles faltantes: {}", e.getMessage());
             e.printStackTrace();
         }
     }
-    
+
     private void inicializarLogros() {
         logger.info("🏆 Inicializando logros del sistema...");
-        
+
         try {
             logroService.inicializarLogrosBasicos();
             logger.info("✅ Logros del sistema inicializados correctamente");
@@ -314,4 +367,4 @@ public class DataLoader implements CommandLineRunner {
             e.printStackTrace();
         }
     }
-} 
+}

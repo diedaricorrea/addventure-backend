@@ -44,7 +44,7 @@ public class UsuarioServiceImpl implements IUsuarioService {
         usuario.setContrasenaHash(passwordEncoder.encode(dto.getContrasena()));
         usuario.setFechaRegistro(LocalDateTime.now());
         usuario.setEsVerificado(false);
-        usuario.setEstadoCuenta("ACTIVA");
+        usuario.setEstadoCuenta("activa");
         usuarioRepository.save(usuario);
     }
 
