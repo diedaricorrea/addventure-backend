@@ -206,7 +206,6 @@ public class DataLoader implements CommandLineRunner {
                     .contrasenaHash(passwordEncoder.encode("danielunp210"))
                     .esVerificado(true)
                     .estadoCuenta("activa")
-                    .estado("activo")
                     .descripcion("Usuario administrador para pruebas del sistema")
                     .build();
 
@@ -227,7 +226,6 @@ public class DataLoader implements CommandLineRunner {
                     .contrasenaHash(passwordEncoder.encode("maria123"))
                     .esVerificado(true)
                     .estadoCuenta("activa")
-                    .estado("activo")
                     .descripcion("Apasionada por los viajes de aventura y la fotografía")
                     .build();
 
