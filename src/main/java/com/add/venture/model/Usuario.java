@@ -88,10 +88,7 @@ public class Usuario {
 
     @Column(name = "fecha_modificacion")
     private LocalDateTime fechaModificacion;
-
-    @Column(length = 20)
-    private String estado = "activo";
-
+    
     // Excluir otras colecciones que puedan causar referencias circulares
     @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "creador")
