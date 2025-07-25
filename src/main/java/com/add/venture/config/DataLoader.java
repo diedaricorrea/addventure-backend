@@ -195,9 +195,9 @@ public class DataLoader implements CommandLineRunner {
         // USUARIO 1: Administrador de prueba
         if (usuarioRepository.findByEmail("diedari20diez@gmail.com").isEmpty()) {
             Usuario admin = Usuario.builder()
-                    .nombre("Carlos")
-                    .apellidos("Administrador")
-                    .nombreUsuario("carlos_admin")
+                    .nombre("Daniel")
+                    .apellidos("Correa")
+                    .nombreUsuario("diedari")
                     .email("diedari20diez@gmail.com")
                     .telefono("968108776")
                     .pais("Peru")
